@@ -119,24 +119,4 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun addParameter(key: String, value: String) {
-        if (key.isBlank()) return
-        parameters = parameters + (key to value)
-    }
-
-    fun removeParameter(key: String) {
-        parameters = parameters - key
-    }
-
-    fun updateParameter(oldKey: String, newKey: String, value: String) {
-        if (newKey.isBlank()) {
-            removeParameter(oldKey)
-            return
-        }
-
-        val newParams = parameters.toMutableMap()
-        newParams.remove(oldKey)
-        newParams[newKey] = value
-        parameters = newParams
-    }
 }
