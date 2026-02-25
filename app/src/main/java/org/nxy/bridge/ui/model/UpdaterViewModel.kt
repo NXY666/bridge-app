@@ -21,6 +21,7 @@ import org.nxy.bridge.ui.component.ServerVersion
 import org.nxy.bridge.ui.component.getCacheApkFile
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
 
 /**
  * 远程版本检查与 APK 下载缓存、进度与安装状态管理。
@@ -53,12 +54,12 @@ class UpdaterViewModel : ViewModel() {
     val hasUpdate: Boolean
         get() = (latest?.versionCode ?: 0L) > currentCode
 
-    fun checkForUpdates(baseUrl: String, apis: ApiConfig = ApiConfig()) {
-        if (baseUrl.isBlank() || apis.version.isNullOrBlank() || checking) return
+    fun checkForUpdates(baseUrl: String, path: String) {
+        if (baseUrl.isBlank() || checking) return
 
         checking = true
         viewModelScope.launch {
-            val sv = fetchServerVersion(App.context, baseUrl, apis)
+            val sv = fetchServerVersion(App.context, baseUrl, path)
             if (sv != null) {
                 latest = sv
                 if (cachedApk.exists() && cachedApk.length() <= 0) {
@@ -70,17 +71,16 @@ class UpdaterViewModel : ViewModel() {
         }
     }
 
-    fun downloadUpdate(baseUrl: String) {
+    fun downloadUpdate() {
         val sv = latest ?: return
         if (!hasUpdate || hasCache || downloading) return
 
-        val url = joinUrl(baseUrl, sv.path)
         downloading = true
         downloadProgress = 0f
         downloadHasTotal = true
 
         viewModelScope.launch {
-            val success = downloadToCache(App.context, url, cachedApk) { downloaded, total ->
+            val success = downloadToCache(App.context, sv.downloadUrl, cachedApk, sv.sha256) { downloaded, total ->
                 if (total > 0) {
                     downloadHasTotal = true
                     downloadProgress = downloaded.toFloat() / total.toFloat()
@@ -110,17 +110,16 @@ class UpdaterViewModel : ViewModel() {
         hasCache = cachedApk.exists()
     }
 
-    fun autoCheckForUpdates(baseUrl: String, apis: ApiConfig = ApiConfig()) {
-        if (baseUrl.isNotBlank() && !apis.version.isNullOrBlank() && !checking) {
-            checkForUpdates(baseUrl, apis)
+    fun autoCheckForUpdates(baseUrl: String, path: String) {
+        if (baseUrl.isNotBlank() && !checking) {
+            checkForUpdates(baseUrl, path)
         }
     }
 
-    // 私有辅助函数
     private suspend fun fetchServerVersion(
-        context: Context, baseUrl: String, apis: ApiConfig
+        context: Context, baseUrl: String, path: String
     ): ServerVersion? {
-        val versionUrl = joinUrl(baseUrl, apis.version ?: return null)
+        val versionUrl = joinUrl(baseUrl, path + "/version")
         val (code, body) = withContext(Dispatchers.IO) {
             try {
                 val client = OkHttpClient.Builder().retryOnConnectionFailure(true).build()
@@ -148,14 +147,15 @@ class UpdaterViewModel : ViewModel() {
                 val data = json.optJSONObject("data")
                 val vName = data?.optString("versionName").orEmpty()
                 val vCode = data?.optLong("versionCode", -1L) ?: -1L
-                val path = data?.optString("path").orEmpty()
-                if (vCode <= 0 || path.isBlank()) {
+                val downloadUrl = data?.optString("downloadUrl").orEmpty()
+                val sha256 = data?.optString("sha256").orEmpty()
+                if (vCode <= 0 || downloadUrl.isBlank()) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "版本信息不完整", Toast.LENGTH_SHORT).show()
                     }
                     null
                 } else {
-                    ServerVersion(vName, vCode, path)
+                    ServerVersion(vName, vCode, downloadUrl, sha256)
                 }
             }
         } catch (_: Exception) {
@@ -187,10 +187,23 @@ class UpdaterViewModel : ViewModel() {
         }
     }
 
+    private fun computeSha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var read: Int
+            while (input.read(buffer).also { read = it } > 0) {
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     private suspend fun downloadToCache(
         context: Context,
         url: String,
         target: File,
+        expectedSha256: String,
         onProgress: ((downloaded: Long, total: Long) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
         return@withContext try {
@@ -223,6 +236,17 @@ class UpdaterViewModel : ViewModel() {
                             }
                         }
                         fos.flush()
+                    }
+                }
+                // SHA256验证
+                if (expectedSha256.isNotBlank()) {
+                    val actual = computeSha256(target)
+                    if (actual != expectedSha256) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "安装包验证失败，请重新下载", Toast.LENGTH_SHORT).show()
+                        }
+                        target.delete()
+                        return@use false
                     }
                 }
                 true

@@ -50,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,26 +59,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import org.nxy.bridge.ui.model.ApiConfig
 import org.nxy.bridge.ui.model.MainViewModel
 import org.nxy.bridge.ui.model.MdnsDiscoveryViewModel
 
 /**
  * 设置对话框：URL、服务发现与参数编辑。
  */
-private val ApiConfigSaver = Saver<ApiConfig, String>(
-    save = { Gson().toJson(it) },
-    restore = {
-        runCatching {
-            Gson().fromJson(
-                it,
-                ApiConfig::class.java
-            )
-        }.getOrElse { ApiConfig() }
-    }
-)
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
@@ -98,14 +84,11 @@ fun SettingsDialog(
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
     var parametersInput by rememberSaveable { mutableStateOf(mainViewModel.parameters) }
-    var apisInput by rememberSaveable(stateSaver = ApiConfigSaver) { mutableStateOf(mainViewModel.apis) }
 
     var showEditSheet by rememberSaveable { mutableStateOf(false) }
-    var isApiEdit by rememberSaveable { mutableStateOf(false) }
     var editingKey by rememberSaveable { mutableStateOf("") }
     var editingValue by rememberSaveable { mutableStateOf("") }
     var originalKey by rememberSaveable { mutableStateOf("") }
-    var editingApiLabel by rememberSaveable { mutableStateOf("") }
 
     AlertDialog(onDismissRequest = onDismiss, confirmButton = {
         TextButton(
@@ -114,7 +97,6 @@ fun SettingsDialog(
                 mainViewModel.url = urlInput
                 mainViewModel.landscape = landscapeInput
                 mainViewModel.parameters = parametersInput
-                mainViewModel.apis = apisInput
                 onDismiss()
             }
         ) { Text("保存") }
@@ -222,7 +204,6 @@ fun SettingsDialog(
                                     .fillMaxWidth()
                                     .clickable {
                                         urlInput = service.url
-                                        service.apis?.let { apisInput = it }
                                         service.landscape?.let { landscapeInput = it }
                                         service.parameters?.let { parametersInput = it }
                                         mdnsDiscoveryViewModel.clearServices()
@@ -418,75 +399,10 @@ fun SettingsDialog(
                     )
                 }
             }
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text("接口", style = MaterialTheme.typography.titleMedium, lineHeight = 32.sp)
-
-                val apiEntries = listOf(
-                    Triple("version", "获取版本", apisInput.version)
-                )
-
-                apiEntries.forEach { (field, label, value) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainerLow,
-                                MaterialTheme.shapes.small
-                            )
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant,
-                                MaterialTheme.shapes.small
-                            )
-                            .padding(12.dp, 8.dp, 8.dp, 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = value ?: "<未配置>",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (value != null) MaterialTheme.colorScheme.onSurfaceVariant
-                                else MaterialTheme.colorScheme.outline
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                isApiEdit = true
-                                editingKey = field
-                                editingApiLabel = label
-                                editingValue = value ?: ""
-                                originalKey = field
-                                showEditSheet = true
-                            },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "编辑接口",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
         }
     })
 
-    // 参数 / 接口 编辑 BottomSheet
+    // 参数编辑 BottomSheet
     if (showEditSheet) {
         val scope = rememberCoroutineScope()
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -495,11 +411,9 @@ fun SettingsDialog(
             scope.launch { sheetState.hide() }.invokeOnCompletion {
                 if (!sheetState.isVisible) {
                     showEditSheet = false
-                    isApiEdit = false
                     editingKey = ""
                     editingValue = ""
                     originalKey = ""
-                    editingApiLabel = ""
                 }
             }
         }
@@ -515,47 +429,18 @@ fun SettingsDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = if (isApiEdit) "编辑接口" else if (originalKey.isEmpty()) "添加参数" else "编辑参数",
+                    text = if (originalKey.isEmpty()) "添加参数" else "编辑参数",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                if (isApiEdit) {
-                    // 接口编辑：键固定，只显示标签
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainerLow,
-                                MaterialTheme.shapes.extraSmall
-                            )
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant,
-                                MaterialTheme.shapes.extraSmall
-                            )
-                            .padding(12.dp, 10.dp)
-                    ) {
-                        Text(
-                            text = "键",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = editingApiLabel,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = editingKey,
-                        onValueChange = { editingKey = it },
-                        label = { Text("键") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                OutlinedTextField(
+                    value = editingKey,
+                    onValueChange = { editingKey = it },
+                    label = { Text("键") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 OutlinedTextField(
                     value = editingValue,
@@ -579,12 +464,7 @@ fun SettingsDialog(
                     }
                     Button(
                         onClick = {
-                            if (isApiEdit) {
-                                apisInput = when (editingKey) {
-                                    "version" -> apisInput.copy(version = editingValue.ifBlank { null })
-                                    else -> apisInput
-                                }
-                            } else if (editingKey.isNotBlank()) {
+                            if (editingKey.isNotBlank()) {
                                 val newParams = parametersInput.toMutableMap()
                                 if (originalKey.isNotEmpty()) newParams.remove(originalKey)
                                 newParams[editingKey] = editingValue
@@ -592,7 +472,7 @@ fun SettingsDialog(
                             }
                             dismiss()
                         },
-                        enabled = if (isApiEdit) true else editingKey.isNotBlank(),
+                        enabled = editingKey.isNotBlank(),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("保存")

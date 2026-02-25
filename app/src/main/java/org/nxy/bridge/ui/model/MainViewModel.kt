@@ -39,14 +39,6 @@ class MainViewModel : ViewModel() {
             saveParametersToPrefs(value)
         }
 
-    private var _apis by mutableStateOf(loadSavedApis())
-    var apis: ApiConfig
-        get() = _apis
-        set(value) {
-            _apis = value
-            saveApisToPrefs(value)
-        }
-
     private fun loadSavedUrl(): String {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return prefs.getString(KEY_URL, "") ?: ""
@@ -83,22 +75,6 @@ class MainViewModel : ViewModel() {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val json = Gson().toJson(parameters)
         prefs.edit { putString(KEY_PARAMETERS, json) }
-    }
-
-    private fun loadSavedApis(): ApiConfig {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val json = prefs.getString(KEY_APIS, "{}" ) ?: "{}"
-        return try {
-            Gson().fromJson(json, ApiConfig::class.java) ?: ApiConfig()
-        } catch (_: Exception) {
-            ApiConfig()
-        }
-    }
-
-    private fun saveApisToPrefs(apis: ApiConfig) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val json = Gson().toJson(apis)
-        prefs.edit { putString(KEY_APIS, json) }
     }
 
     private fun normalizeUrl(input: String): String {

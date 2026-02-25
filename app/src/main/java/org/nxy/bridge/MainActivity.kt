@@ -185,7 +185,7 @@ fun UrlEntryScreen() {
                 }
             }
 
-            UpdaterCard(baseUrl = mainViewModel.url, apis = mainViewModel.apis)
+            UpdaterCard()
             LanIpCard()
         }
     }

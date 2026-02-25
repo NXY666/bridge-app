@@ -62,13 +62,4 @@ const val PREFS = "org.nxy.bridge.prefs"
 const val KEY_URL = "key_url"
 const val KEY_LANDSCAPE = "key_landscape"
 const val KEY_PARAMETERS = "key_parameters"
-const val KEY_APIS = "key_apis"
 const val SETTINGS_PASSWORD = "1145"
-
-/**
- * 所有后端 API 路径的集中配置。
- * 字段使用有意义的名称，新 API 直接在此追加即可。
- */
-data class ApiConfig(
-    val version: String? = null
-)

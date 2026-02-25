@@ -5,10 +5,14 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,14 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.nxy.bridge.ui.model.ApiConfig
+import org.nxy.bridge.ui.model.UpdaterDiscoveryViewModel
 import org.nxy.bridge.ui.model.UpdaterViewModel
 import java.io.File
 
 data class ServerVersion(
     val versionName: String,
     val versionCode: Long,
-    val path: String
+    val downloadUrl: String,
+    val sha256: String
 )
 
 /**
@@ -55,12 +60,22 @@ data class ServerVersion(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun UpdaterCard(baseUrl: String, apis: ApiConfig = ApiConfig()) {
+fun UpdaterCard() {
     val context = LocalContext.current
     val viewModel: UpdaterViewModel = viewModel()
+    val updaterDiscovery: UpdaterDiscoveryViewModel = viewModel()
 
-    LaunchedEffect(baseUrl, apis) {
-        if (apis.version != null) viewModel.autoCheckForUpdates(baseUrl, apis)
+    // 启动时自动扫描更新服务
+    LaunchedEffect(Unit) {
+        updaterDiscovery.startDiscovery()
+    }
+
+    // 发现更新服务后自动检查更新
+    val firstService = updaterDiscovery.discoveredServices.firstOrNull()
+    LaunchedEffect(firstService) {
+        if (firstService != null) {
+            viewModel.autoCheckForUpdates(firstService.baseUrl, firstService.path)
+        }
     }
 
     ElevatedCard(
@@ -82,18 +97,34 @@ fun UpdaterCard(baseUrl: String, apis: ApiConfig = ApiConfig()) {
                     style = MaterialTheme.typography.headlineSmall
                 )
 
-                AnimatedVisibility(
-                    visible = viewModel.checking,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    LoadingIndicator(
-                        modifier = Modifier.size(32.dp)
-                    )
+                val headerIconState = when {
+                    viewModel.checking || updaterDiscovery.isSearching -> 1
+                    updaterDiscovery.hasSearched && firstService == null -> 2
+                    else -> 0
+                }
+                AnimatedContent(
+                    targetState = headerIconState,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "updater_header_icon"
+                ) { state ->
+                    when (state) {
+                        1 -> LoadingIndicator(modifier = Modifier.size(32.dp))
+                        2 -> IconButton(
+                            onClick = { updaterDiscovery.startDiscovery() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = "重试",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        else -> Box(modifier = Modifier.size(32.dp))
+                    }
                 }
             }
 
-            if (apis.version == null) {
+            if (firstService == null) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
@@ -197,9 +228,9 @@ fun UpdaterCard(baseUrl: String, apis: ApiConfig = ApiConfig()) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        enabled = baseUrl.isNotBlank() && !(viewModel.checking || viewModel.downloading),
+                        enabled = !(viewModel.checking || viewModel.downloading),
                         modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = { viewModel.checkForUpdates(baseUrl, apis) }
+                        onClick = { firstService.let { viewModel.checkForUpdates(it.baseUrl, it.path) } }
                     ) {
                         Icon(Icons.Rounded.Refresh, contentDescription = "检查更新")
                     }
@@ -207,7 +238,7 @@ fun UpdaterCard(baseUrl: String, apis: ApiConfig = ApiConfig()) {
                     Button(
                         enabled = viewModel.hasUpdate && viewModel.latest != null && !viewModel.hasCache && !(viewModel.checking || viewModel.downloading),
                         modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = { viewModel.downloadUpdate(baseUrl) }
+                        onClick = { viewModel.downloadUpdate() }
                     ) {
                         Icon(Icons.Rounded.GetApp, contentDescription = "下载更新")
                     }
