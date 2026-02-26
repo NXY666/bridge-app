@@ -11,8 +11,8 @@ android {
         applicationId = "org.nxy.bridge"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 1
+        versionName = "0.0.0"
 
         val ciVersionCode = project.findProperty("versionCode") as String?
         val ciVersionName = project.findProperty("versionName") as String?
