@@ -147,7 +147,9 @@ class UpdaterViewModel : ViewModel() {
                 val data = json.optJSONObject("data")
                 val vName = data?.optString("versionName").orEmpty()
                 val vCode = data?.optLong("versionCode", -1L) ?: -1L
-                val downloadUrl = data?.optString("downloadUrl").orEmpty()
+                val downUrl = data?.optJSONObject("downUrl")
+                val localUrl = downUrl?.takeIf { !it.isNull("local") }?.optString("local")
+                val downloadUrl = if (!localUrl.isNullOrBlank()) localUrl else downUrl?.optString("github").orEmpty()
                 val sha256 = data?.optString("sha256").orEmpty()
                 if (vCode <= 0 || downloadUrl.isBlank()) {
                     withContext(Dispatchers.Main) {

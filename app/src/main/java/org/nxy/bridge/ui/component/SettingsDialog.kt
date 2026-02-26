@@ -206,6 +206,7 @@ fun SettingsDialog(
                                         urlInput = service.url
                                         service.landscape?.let { landscapeInput = it }
                                         service.parameters?.let { parametersInput = it }
+                                        mdnsDiscoveryViewModel.stopDiscovery()
                                         mdnsDiscoveryViewModel.clearServices()
                                     }
                                     .background(
