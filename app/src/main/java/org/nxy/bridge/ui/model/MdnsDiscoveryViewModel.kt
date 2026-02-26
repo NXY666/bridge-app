@@ -12,11 +12,16 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.nxy.bridge.App
 import java.net.Inet4Address
 import java.net.Inet6Address
+import java.net.InetAddress
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -369,22 +374,26 @@ class UpdaterDiscoveryViewModel : ViewModel() {
                         ?.let { runCatching { String(it, Charsets.UTF_8) }.getOrNull() }
                         ?.takeIf { it.isNotBlank() }
 
-                    // TXT中可覆盖host（用于nginx等场景）
-                    val host = attr("host")
-                        ?: info.hostAddresses.firstOrNull { it is Inet4Address }?.hostAddress
-                        ?: info.hostAddresses.firstOrNull { it is Inet6Address }?.hostAddress
-                        ?: "unknown"
                     val port = info.port
                     val path = attr("path") ?: ""
+                    val addresses = info.hostAddresses
 
-                    serviceMap[serviceName] = UpdaterService(
-                        name = serviceName,
-                        host = host,
-                        port = port,
-                        path = path
-                    )
-                    updateServices()
-                    stopDiscovery()
+                    viewModelScope.launch(Dispatchers.IO) {
+                        // TXT中可覆盖host（用于nginx等场景），否则并发探测所有地址连通性
+                        val host = attr("host") ?: probeAddresses(addresses, port, path) ?: run {
+                            Log.w(TAG, "无可达地址: $serviceName")
+                            return@launch
+                        }
+
+                        serviceMap[serviceName] = UpdaterService(
+                            name = serviceName,
+                            host = host,
+                            port = port,
+                            path = path
+                        )
+                        updateServices()
+                        stopDiscovery()
+                    }
                 }
 
                 override fun onServiceLost() {
@@ -418,20 +427,33 @@ class UpdaterDiscoveryViewModel : ViewModel() {
                             ?.let { runCatching { String(it, Charsets.UTF_8) }.getOrNull() }
                             ?.takeIf { it.isNotBlank() }
 
-                        // TXT中可覆盖host（用于nginx等场景）
-                        val host = attr("host") ?: info.host?.hostAddress ?: "unknown"
+                        val txtHost = attr("host")
+                        val resolvedHost = info.host
                         val port = info.port
                         val path = attr("path") ?: ""
                         val serviceName = info.serviceName
 
-                        serviceMap[serviceName] = UpdaterService(
-                            name = serviceName,
-                            host = host,
-                            port = port,
-                            path = path
-                        )
-                        updateServices()
-                        stopDiscovery()
+                        viewModelScope.launch(Dispatchers.IO) {
+                            // TXT中可覆盖host（用于nginx等场景），否则探测地址连通性
+                            val host = txtHost
+                                ?: resolvedHost?.let { probeAddresses(listOf(it), port, path) }
+                                ?: run {
+                                    Log.w(TAG, "无可达地址: $serviceName")
+                                    return@launch
+                                }
+
+                            serviceMap[serviceName] = UpdaterService(
+                                name = serviceName,
+                                host = host,
+                                port = port,
+                                path = path
+                            )
+
+                            updateServices()
+                            stopDiscovery()
+
+                            Log.d(TAG, "Resolved service: $serviceName at $host:$port$path")
+                        }
                     }
                 }
             }
@@ -443,6 +465,41 @@ class UpdaterDiscoveryViewModel : ViewModel() {
                 Log.e(TAG, "Failed to resolve service: ${serviceInfo.serviceName}", e)
             }
         }
+    }
+
+    private fun formatHost(address: InetAddress): String = when (address) {
+        is Inet6Address -> "[${address.hostAddress?.substringBefore('%') ?: "::1"}]"
+        else -> address.hostAddress ?: "unknown"
+    }
+
+    // 并发探测多个地址，返回第一个成功响应 /hello 的 host 字符串
+    private suspend fun probeAddresses(addresses: List<InetAddress>, port: Int, path: String): String? {
+        if (addresses.isEmpty()) return null
+        val channel = Channel<String?>(Channel.UNLIMITED)
+        val jobs = mutableListOf<Job>()
+        for (address in addresses) {
+            jobs += viewModelScope.launch(Dispatchers.IO) {
+                val host = formatHost(address)
+                val result = runCatching {
+                    val conn = URL("http://$host:$port${path}/hello").openConnection() as HttpURLConnection
+                    conn.connectTimeout = 3000
+                    conn.readTimeout = 3000
+                    conn.useCaches = false
+                    if (conn.responseCode == 200) host else null
+                }.getOrNull()
+                channel.send(result)
+            }
+        }
+        var found: String? = null
+        repeat(addresses.size) {
+            val r = channel.receive()
+            if (r != null) {
+                found = r
+                return@repeat
+            }
+        }
+        jobs.forEach { it.cancel() }
+        return found
     }
 
     private fun startNsdDiscovery() {
