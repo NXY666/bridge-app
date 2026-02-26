@@ -1,7 +1,6 @@
 package org.nxy.bridge.ui.component
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -16,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -67,10 +68,7 @@ import org.nxy.bridge.ui.model.MdnsDiscoveryViewModel
  * 设置对话框：URL、服务发现与参数编辑。
  */
 
-@OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalAnimationApi::class
-)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDialog(
     visible: Boolean,
@@ -238,25 +236,36 @@ fun SettingsDialog(
                                     )
                                 }
                                 Column(
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
                                         service.url,
                                         style = MaterialTheme.typography.bodySmall
                                     )
-                                    if (!service.parameters.isNullOrEmpty()) {
-                                        Text(
-                                            "参数: ${service.parameters.entries.joinToString(", ") { "${it.key}=${it.value}" }}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    val chipLabels = buildList {
+                                        service.parameters?.entries?.forEach { add("${it.key}=${it.value}") }
+                                        service.landscape?.let { add(if (it) "横屏" else "竖屏") }
                                     }
-                                    if (service.landscape == false) {
-                                        Text(
-                                            "屏幕方向: 竖屏",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    if (chipLabels.isNotEmpty()) {
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            chipLabels.forEach { label ->
+                                                Text(
+                                                    text = label,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    modifier = Modifier
+                                                        .background(
+                                                            MaterialTheme.colorScheme.secondaryContainer,
+                                                            CircleShape
+                                                        )
+                                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
