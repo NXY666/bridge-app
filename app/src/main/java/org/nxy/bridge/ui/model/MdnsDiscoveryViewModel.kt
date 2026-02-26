@@ -6,7 +6,6 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresExtension
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -41,17 +40,19 @@ class MdnsDiscoveryViewModel : ViewModel() {
         val landscape: Boolean? = null,
         val parameters: Map<String, String>? = null
     ) {
-        val baseUrl: String get() = Uri.Builder()
-            .scheme(scheme)
-            .encodedAuthority("$host:$port")
-            .build()
-            .toString()
-        val url: String get() = Uri.Builder()
-            .scheme(scheme)
-            .encodedAuthority("$host:$port")
-            .path(path)
-            .build()
-            .toString()
+        val baseUrl: String
+            get() = Uri.Builder()
+                .scheme(scheme)
+                .encodedAuthority("$host:$port")
+                .build()
+                .toString()
+        val url: String
+            get() = Uri.Builder()
+                .scheme(scheme)
+                .encodedAuthority("$host:$port")
+                .path(path)
+                .build()
+                .toString()
     }
 
     private val serviceMap = mutableMapOf<String, BridgeService>()
@@ -114,11 +115,10 @@ class MdnsDiscoveryViewModel : ViewModel() {
                     Log.e(TAG, "Resolve failed for ${serviceInfo.serviceName}: $errorCode")
                 }
 
-                @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 17)
                 override fun onServiceUpdated(info: NsdServiceInfo) {
                     Log.d(
                         TAG,
-                        "Service Updated: ${info.serviceName} ${info.hostAddresses.joinToString(",")} ${info.hostname}"
+                        "Service Updated: ${info.serviceName} ${info.hostAddresses.joinToString(",")}"
                     )
                     val attrs = info.attributes
 
@@ -130,7 +130,7 @@ class MdnsDiscoveryViewModel : ViewModel() {
                     val host = attr("host")
                         ?: info.hostAddresses.firstOrNull { it is Inet4Address }?.hostAddress
                         ?: info.hostAddresses.firstOrNull { it is Inet6Address }?.hostAddress
-                        ?: info.hostname ?: "unknown"
+                        ?: "unknown"
                     val port = info.port
                     val serviceName = info.serviceName
 
@@ -270,17 +270,19 @@ data class UpdaterService(
     val port: Int,
     val path: String
 ) {
-    val baseUrl: String get() = Uri.Builder()
-        .scheme("http")
-        .encodedAuthority("$host:$port")
-        .build()
-        .toString()
-    val url: String get() = Uri.Builder()
-        .scheme("http")
-        .encodedAuthority("$host:$port")
-        .path(path)
-        .build()
-        .toString()
+    val baseUrl: String
+        get() = Uri.Builder()
+            .scheme("http")
+            .encodedAuthority("$host:$port")
+            .build()
+            .toString()
+    val url: String
+        get() = Uri.Builder()
+            .scheme("http")
+            .encodedAuthority("$host:$port")
+            .path(path)
+            .build()
+            .toString()
 }
 
 /**
@@ -356,7 +358,6 @@ class UpdaterDiscoveryViewModel : ViewModel() {
                     Log.e(TAG, "Resolve failed for ${serviceInfo.serviceName}: $errorCode")
                 }
 
-                @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 17)
                 override fun onServiceUpdated(info: NsdServiceInfo) {
                     Log.d(TAG, "Service Updated: ${info.serviceName}")
 
@@ -372,7 +373,7 @@ class UpdaterDiscoveryViewModel : ViewModel() {
                     val host = attr("host")
                         ?: info.hostAddresses.firstOrNull { it is Inet4Address }?.hostAddress
                         ?: info.hostAddresses.firstOrNull { it is Inet6Address }?.hostAddress
-                        ?: info.hostname ?: "unknown"
+                        ?: "unknown"
                     val port = info.port
                     val path = attr("path") ?: ""
 
