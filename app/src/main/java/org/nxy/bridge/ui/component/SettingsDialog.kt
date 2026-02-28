@@ -50,7 +50,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -60,11 +59,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Checkbox
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.mozilla.geckoview.StorageController
-import org.nxy.bridge.ui.model.GeckoViewModel
 import org.nxy.bridge.ui.model.MainViewModel
 import org.nxy.bridge.ui.model.MdnsDiscoveryViewModel
 
@@ -82,14 +78,12 @@ fun SettingsDialog(
     if (!visible) return
 
     val mdnsDiscoveryViewModel: MdnsDiscoveryViewModel = viewModel()
-    val geckoViewModel: GeckoViewModel = viewModel()
 
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
     var parametersInput by rememberSaveable { mutableStateOf(mainViewModel.parameters) }
 
     var showEditSheet by rememberSaveable { mutableStateOf(false) }
-    var showClearDialog by rememberSaveable { mutableStateOf(false) }
     var editingKey by rememberSaveable { mutableStateOf("") }
     var editingValue by rememberSaveable { mutableStateOf("") }
     var originalKey by rememberSaveable { mutableStateOf("") }
@@ -106,7 +100,6 @@ fun SettingsDialog(
         ) { Text("保存") }
     }, dismissButton = {
         Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-            TextButton(onClick = { showClearDialog = true }) { Text("清理") }
             TextButton(onClick = onDismiss) { Text("取消") }
         }
     }, title = { Text("设置") }, text = {
@@ -420,67 +413,6 @@ fun SettingsDialog(
             }
         }
     })
-
-    // 清理数据对话框
-    if (showClearDialog) {
-        val clearOptions = listOf(
-            "ALL" to StorageController.ClearFlags.ALL,
-            "DOM_STORAGES" to StorageController.ClearFlags.DOM_STORAGES,
-            "COOKIES" to StorageController.ClearFlags.COOKIES,
-            "SITE_DATA" to StorageController.ClearFlags.SITE_DATA,
-            "ALL_CACHES" to StorageController.ClearFlags.ALL_CACHES,
-            "AUTH_SESSIONS" to StorageController.ClearFlags.AUTH_SESSIONS,
-            "IMAGE_CACHE" to StorageController.ClearFlags.IMAGE_CACHE,
-            "NETWORK_CACHE" to StorageController.ClearFlags.NETWORK_CACHE,
-            "PERMISSIONS" to StorageController.ClearFlags.PERMISSIONS,
-            "SITE_SETTINGS" to StorageController.ClearFlags.SITE_SETTINGS,
-        )
-        var selectedFlags by remember { mutableStateOf(setOf<Long>()) }
-
-        AlertDialog(
-            onDismissRequest = { showClearDialog = false },
-            confirmButton = {
-                TextButton(
-                    enabled = selectedFlags.isNotEmpty(),
-                    onClick = {
-                        val flags = selectedFlags.fold(0L) { acc, flag -> acc or flag }
-                        geckoViewModel.runtime.storageController.clearData(flags)
-                        showClearDialog = false
-                    }
-                ) { Text("清理") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) { Text("取消") }
-            },
-            title = { Text("清理数据") },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    clearOptions.forEach { (label, flag) ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedFlags = if (flag in selectedFlags) {
-                                        selectedFlags - flag
-                                    } else {
-                                        selectedFlags + flag
-                                    }
-                                }
-                        ) {
-                            Checkbox(
-                                checked = flag in selectedFlags,
-                                onCheckedChange = { checked ->
-                                    selectedFlags = if (checked) selectedFlags + flag else selectedFlags - flag
-                                }
-                            )
-                            Text(label)
-                        }
-                    }
-                }
-            }
-        )
-    }
 
     // 参数编辑 BottomSheet
     if (showEditSheet) {
