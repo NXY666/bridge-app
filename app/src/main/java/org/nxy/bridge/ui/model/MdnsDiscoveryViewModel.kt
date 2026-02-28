@@ -17,10 +17,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.nxy.bridge.App
+import java.net.HttpURLConnection
 import java.net.Inet4Address
 import java.net.Inet6Address
 import java.net.InetAddress
-import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.time.Duration.Companion.seconds
 
@@ -264,6 +264,11 @@ class MdnsDiscoveryViewModel : ViewModel() {
             isSearching = false
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopDiscovery()
+    }
 }
 
 /**
@@ -326,6 +331,11 @@ class UpdaterDiscoveryViewModel : ViewModel() {
             delay(10.seconds)
             stopDiscovery()
         }
+    }
+
+    fun clearService() {
+        serviceMap.clear()
+        discoveredServices = emptyList()
     }
 
     private fun stopDiscovery() {
@@ -473,7 +483,11 @@ class UpdaterDiscoveryViewModel : ViewModel() {
     }
 
     // 并发探测多个地址，返回第一个成功响应 /hello 的 host 字符串
-    private suspend fun probeAddresses(addresses: List<InetAddress>, port: Int, path: String): String? {
+    private suspend fun probeAddresses(
+        addresses: List<InetAddress>,
+        port: Int,
+        path: String
+    ): String? {
         if (addresses.isEmpty()) return null
         val channel = Channel<String?>(Channel.UNLIMITED)
         val jobs = mutableListOf<Job>()
@@ -481,7 +495,9 @@ class UpdaterDiscoveryViewModel : ViewModel() {
             jobs += viewModelScope.launch(Dispatchers.IO) {
                 val host = formatHost(address)
                 val result = runCatching {
-                    val conn = URL("http://$host:$port${path}/hello").openConnection() as HttpURLConnection
+                    val conn =
+                        URL("http://$host:$port${path}/hello")
+                            .openConnection() as HttpURLConnection
                     conn.connectTimeout = 3000
                     conn.readTimeout = 3000
                     conn.useCaches = false
@@ -491,11 +507,11 @@ class UpdaterDiscoveryViewModel : ViewModel() {
             }
         }
         var found: String? = null
-        repeat(addresses.size) {
+        for (i in addresses.indices) {
             val r = channel.receive()
             if (r != null) {
                 found = r
-                return@repeat
+                break
             }
         }
         jobs.forEach { it.cancel() }
@@ -541,5 +557,10 @@ class UpdaterDiscoveryViewModel : ViewModel() {
             Log.e(TAG, "Failed to start service discovery", e)
             isSearching = false
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopDiscovery()
     }
 }

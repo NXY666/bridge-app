@@ -8,13 +8,16 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,12 +28,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.GetApp
 import androidx.compose.material.icons.rounded.Hardware
+import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,13 +44,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.nxy.bridge.ui.model.UpdaterDiscoveryViewModel
 import org.nxy.bridge.ui.model.UpdaterViewModel
+import org.nxy.bridge.ui.theme.onSuccessContainerDark
+import org.nxy.bridge.ui.theme.onSuccessContainerLight
+import org.nxy.bridge.ui.theme.successContainerDark
+import org.nxy.bridge.ui.theme.successContainerLight
 import java.io.File
 
 data class ServerVersion(
@@ -65,16 +78,18 @@ fun UpdaterCard() {
     val viewModel: UpdaterViewModel = viewModel()
     val updaterDiscovery: UpdaterDiscoveryViewModel = viewModel()
 
-    // 启动时自动扫描更新服务
-    LaunchedEffect(Unit) {
-        updaterDiscovery.startDiscovery()
+    // 发现更新服务后自动检查更新
+    val discoveredService = updaterDiscovery.discoveredServices.firstOrNull()
+    LaunchedEffect(discoveredService) {
+        if (discoveredService != null) {
+            viewModel.autoCheckForUpdates(discoveredService.baseUrl, discoveredService.path)
+        }
     }
 
-    // 发现更新服务后自动检查更新
-    val firstService = updaterDiscovery.discoveredServices.firstOrNull()
-    LaunchedEffect(firstService) {
-        if (firstService != null) {
-            viewModel.autoCheckForUpdates(firstService.baseUrl, firstService.path)
+    // 启动时自动扫描更新服务
+    LaunchedEffect(Unit) {
+        if (!updaterDiscovery.isSearching && discoveredService == null) {
+            updaterDiscovery.startDiscovery()
         }
     }
 
@@ -84,11 +99,9 @@ fun UpdaterCard() {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(16.dp)
         ) {
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -97,37 +110,93 @@ fun UpdaterCard() {
                     style = MaterialTheme.typography.headlineSmall
                 )
 
-                val headerIconState = when {
-                    viewModel.checking || updaterDiscovery.isSearching -> 1
-                    updaterDiscovery.hasSearched && firstService == null -> 2
-                    else -> 0
+                val isDark = isSystemInDarkTheme()
+                val isServiceDiscovered = discoveredService != null
+
+                // Chip 区域：已连接 / 未连接 / 空
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(start = 12.dp, end = 4.dp)
+                        .weight(1f)
+                ) {
+                    val chipAlpha by animateFloatAsState(
+                        targetValue = if (updaterDiscovery.isSearching) 0f else 1f,
+                        label = "updater-chip-alpha"
+                    )
+                    Box(modifier = Modifier.graphicsLayer { alpha = chipAlpha }) {
+                        if (isServiceDiscovered) {
+                            StatusChip(
+                                label = {
+                                    Text(
+                                        "${discoveredService.host}:${discoveredService.port}",
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                },
+                                containerColor = if (isDark) successContainerDark else successContainerLight,
+                                labelColor = if (isDark) onSuccessContainerDark else onSuccessContainerLight,
+                                border = BorderStroke(0.dp, Color.Transparent)
+                            )
+                        } else {
+                            StatusChip(
+                                label = { Text("未连接") },
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                labelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                border = BorderStroke(0.dp, Color.Transparent)
+                            )
+                        }
+                    }
                 }
+
+                // 操作区域：加载中 / 断开 / 重试 / 空
                 AnimatedContent(
-                    targetState = headerIconState,
+                    targetState = updaterDiscovery.isSearching,
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "updater_header_icon"
-                ) { state ->
-                    when (state) {
-                        1 -> LoadingIndicator(modifier = Modifier.size(32.dp))
-                        2 -> IconButton(
+                    label = "updater-action"
+                ) { isLoading ->
+                    if (isLoading) {
+                        LoadingIndicator(modifier = Modifier.size(32.dp))
+                        return@AnimatedContent
+                    }
+
+                    if (isServiceDiscovered) {
+                        val isBusy = viewModel.checking || viewModel.downloading
+
+                        IconButton(
+                            enabled = !isBusy,
+                            onClick = { updaterDiscovery.clearService() },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .alpha(if (isBusy) 0.38f else 1f)
+                        ) {
+                            Icon(
+                                Icons.Rounded.LinkOff,
+                                contentDescription = "断开连接",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        IconButton(
                             onClick = { updaterDiscovery.startDiscovery() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 Icons.Rounded.Refresh,
-                                contentDescription = "重试",
+                                contentDescription = "重新扫描",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        else -> Box(modifier = Modifier.size(32.dp))
                     }
                 }
             }
 
-            if (firstService == null) {
+            if (discoveredService == null) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
+                        .padding(top = 16.dp)
                         .background(
                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                             shape = MaterialTheme.shapes.small
@@ -152,7 +221,9 @@ fun UpdaterCard() {
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -224,13 +295,30 @@ fun UpdaterCard() {
                     }
                 }
 
+            }
+
+            AnimatedVisibility(
+                visible = discoveredService != null,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
                 ) {
                     Button(
                         enabled = !(viewModel.checking || viewModel.downloading),
                         modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = { firstService.let { viewModel.checkForUpdates(it.baseUrl, it.path) } }
+                        onClick = {
+                            discoveredService?.let {
+                                viewModel.checkForUpdates(
+                                    it.baseUrl,
+                                    it.path
+                                )
+                            }
+                        }
                     ) {
                         Icon(Icons.Rounded.Refresh, contentDescription = "检查更新")
                     }
