@@ -62,7 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.nxy.bridge.ui.model.MainViewModel
-import org.nxy.bridge.ui.model.MdnsDiscoveryViewModel
+import org.nxy.bridge.ui.model.BridgeDiscoveryViewModel
 
 /**
  * 设置对话框：URL、服务发现与参数编辑。
@@ -77,7 +77,7 @@ fun SettingsDialog(
 ) {
     if (!visible) return
 
-    val mdnsDiscoveryViewModel: MdnsDiscoveryViewModel = viewModel()
+    val bridgeDiscoveryViewModel: BridgeDiscoveryViewModel = viewModel()
 
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
@@ -107,7 +107,7 @@ fun SettingsDialog(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.verticalScroll(rememberScrollState())
         ) {
-            val searcherModifier = if (mdnsDiscoveryViewModel.isSearching) {
+            val searcherModifier = if (bridgeDiscoveryViewModel.isSearching) {
                 Modifier
                     .background(
                         MaterialTheme.colorScheme.secondaryContainer,
@@ -139,9 +139,9 @@ fun SettingsDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(
-                            enabled = !mdnsDiscoveryViewModel.isSearching,
+                            enabled = !bridgeDiscoveryViewModel.isSearching,
                             onClick = {
-                                mdnsDiscoveryViewModel.startDiscovery()
+                                bridgeDiscoveryViewModel.startDiscovery()
                             })
                         .padding(12.dp)
                         .clip(MaterialTheme.shapes.small)
@@ -153,7 +153,7 @@ fun SettingsDialog(
                     )
 
                     AnimatedContent(
-                        targetState = mdnsDiscoveryViewModel.isSearching,
+                        targetState = bridgeDiscoveryViewModel.isSearching,
                         transitionSpec = {
                             val enter =
                                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
@@ -189,7 +189,7 @@ fun SettingsDialog(
                     }
                 }
 
-                if (mdnsDiscoveryViewModel.discoveredServices.isNotEmpty()) {
+                if (bridgeDiscoveryViewModel.discoveredServices.isNotEmpty()) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
@@ -198,7 +198,7 @@ fun SettingsDialog(
                             .padding(12.dp, 0.dp, 12.dp, 12.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        mdnsDiscoveryViewModel.discoveredServices.forEach { service ->
+                        bridgeDiscoveryViewModel.discoveredServices.forEach { service ->
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -206,8 +206,8 @@ fun SettingsDialog(
                                         urlInput = service.url
                                         service.landscape?.let { landscapeInput = it }
                                         service.parameters?.let { parametersInput = it }
-                                        mdnsDiscoveryViewModel.stopDiscovery()
-                                        mdnsDiscoveryViewModel.clearServices()
+                                        bridgeDiscoveryViewModel.stopDiscovery()
+                                        bridgeDiscoveryViewModel.clearServices()
                                     }
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainerLow,
