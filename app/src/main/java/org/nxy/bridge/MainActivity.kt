@@ -87,11 +87,15 @@ fun UrlEntryScreen() {
         when (selectedTab) {
             0 -> HomeTab(
                 innerPadding = innerPadding,
-                mainViewModel = mainViewModel,
-                onShowPasswordDialog = { showPasswordDialog = true }
+                mainViewModel = mainViewModel
             )
 
-            1 -> AdminTab(innerPadding = innerPadding)
+            1 -> AdminTab(
+                innerPadding = innerPadding,
+                mainViewModel = mainViewModel,
+                onShowPasswordDialog = { showPasswordDialog = true },
+                onShowSettingsDialog = { showSettings = true }
+            )
         }
     }
 
@@ -99,8 +103,8 @@ fun UrlEntryScreen() {
         visible = showPasswordDialog,
         onDismiss = { showPasswordDialog = false },
         onSuccess = {
+            mainViewModel.adminUnlockTime = System.currentTimeMillis()
             showPasswordDialog = false
-            showSettings = true
         }
     )
 

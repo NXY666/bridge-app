@@ -53,7 +53,7 @@ fun PasswordDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("取消") }
         },
-        title = { Text("设置") },
+        title = { Text("解锁") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

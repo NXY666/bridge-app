@@ -14,6 +14,13 @@ import org.nxy.bridge.App
 
 class MainViewModel : ViewModel() {
 
+    // 管理页解锁时间戳，0 表示未解锁
+    var adminUnlockTime by mutableStateOf(0L)
+
+    // 5分钟内是否已解锁
+    val isAdminUnlocked: Boolean
+        get() = System.currentTimeMillis() - adminUnlockTime < 5 * 60 * 1000L
+
     private var _url by mutableStateOf(loadSavedUrl())
     var url: String
         get() = _url

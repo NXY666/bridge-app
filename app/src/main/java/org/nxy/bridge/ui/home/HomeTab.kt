@@ -18,8 +18,7 @@ import org.nxy.bridge.ui.model.MainViewModel
 @Composable
 fun HomeTab(
     innerPadding: PaddingValues,
-    mainViewModel: MainViewModel,
-    onShowPasswordDialog: () -> Unit
+    mainViewModel: MainViewModel
 ) {
     Column(
         modifier = Modifier
@@ -30,8 +29,7 @@ fun HomeTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         BrowseCard(
-            mainViewModel = mainViewModel,
-            onShowPasswordDialog = onShowPasswordDialog
+            mainViewModel = mainViewModel
         )
         LanIpCard()
     }
