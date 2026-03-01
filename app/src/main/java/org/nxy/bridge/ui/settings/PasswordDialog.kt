@@ -1,4 +1,4 @@
-package org.nxy.bridge.ui.component
+package org.nxy.bridge.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

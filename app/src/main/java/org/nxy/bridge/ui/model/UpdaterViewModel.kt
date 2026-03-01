@@ -17,8 +17,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import org.nxy.bridge.App
-import org.nxy.bridge.ui.component.ServerVersion
-import org.nxy.bridge.ui.component.getCacheApkFile
+import org.nxy.bridge.ui.admin.ServerVersion
+import org.nxy.bridge.ui.admin.getCacheApkFile
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -119,7 +119,7 @@ class UpdaterViewModel : ViewModel() {
     private suspend fun fetchServerVersion(
         context: Context, baseUrl: String, path: String
     ): ServerVersion? {
-        val versionUrl = joinUrl(baseUrl, path + "/version")
+        val versionUrl = joinUrl(baseUrl, "$path/version")
         val (code, body) = withContext(Dispatchers.IO) {
             try {
                 val client = OkHttpClient.Builder().retryOnConnectionFailure(true).build()

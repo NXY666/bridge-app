@@ -1,4 +1,4 @@
-package org.nxy.bridge.ui.component
+package org.nxy.bridge.ui.home
 
 import android.content.ClipData
 import android.util.Log
@@ -77,7 +77,7 @@ fun LanIpCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                ipList.forEachIndexed { index, entry ->
+                ipList.forEachIndexed { _, entry ->
                     IpRow(entry = entry, onCopy = {
                         runBlocking {
                             clipboard.setClipEntry(

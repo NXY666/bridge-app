@@ -1,4 +1,4 @@
-package org.nxy.bridge.ui.component
+package org.nxy.bridge.ui.admin
 
 import android.content.Context
 import android.content.Intent
@@ -54,6 +54,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.nxy.bridge.ui.model.UpdaterDiscoveryViewModel
+import org.nxy.bridge.ui.component.StatusChip
 import org.nxy.bridge.ui.model.UpdaterViewModel
 import org.nxy.bridge.ui.theme.onSuccessContainerDark
 import org.nxy.bridge.ui.theme.onSuccessContainerLight
