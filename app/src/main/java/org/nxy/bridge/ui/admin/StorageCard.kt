@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
@@ -40,9 +41,20 @@ private data class CleanOption(
     val children: List<CleanOption> = emptyList()
 )
 
+private fun buildCacheOptionTree(): List<CleanOption> {
+    val allCachesFlag = StorageController.ClearFlags.ALL_CACHES
+    return listOf(
+        CleanOption(
+            "全部", allCachesFlag, 0, emptySet(), listOf(
+                CleanOption("图片缓存", StorageController.ClearFlags.IMAGE_CACHE, 1, setOf(allCachesFlag)),
+                CleanOption("网络缓存", StorageController.ClearFlags.NETWORK_CACHE, 1, setOf(allCachesFlag)),
+            )
+        )
+    )
+}
+
 private fun buildCleanOptionTree(): List<CleanOption> {
     val allFlag = StorageController.ClearFlags.ALL
-    val allCachesFlag = StorageController.ClearFlags.ALL_CACHES
 
     fun node(
         label: String,
@@ -55,22 +67,6 @@ private fun buildCleanOptionTree(): List<CleanOption> {
     return listOf(
         node(
             "全部", allFlag, 0, emptySet(), listOf(
-                node(
-                    "所有缓存", allCachesFlag, 1, setOf(allFlag), listOf(
-                        node(
-                            "图片缓存",
-                            StorageController.ClearFlags.IMAGE_CACHE,
-                            2,
-                            setOf(allFlag, allCachesFlag)
-                        ),
-                        node(
-                            "网络缓存",
-                            StorageController.ClearFlags.NETWORK_CACHE,
-                            2,
-                            setOf(allFlag, allCachesFlag)
-                        ),
-                    )
-                ),
                 node("Cookie", StorageController.ClearFlags.COOKIES, 1, setOf(allFlag)),
                 node("站点数据", StorageController.ClearFlags.SITE_DATA, 1, setOf(allFlag)),
                 node("本地存储", StorageController.ClearFlags.DOM_STORAGES, 1, setOf(allFlag)),
@@ -85,12 +81,74 @@ private fun buildCleanOptionTree(): List<CleanOption> {
 private fun flattenCleanOptions(options: List<CleanOption>): List<CleanOption> =
     options.flatMap { listOf(it) + flattenCleanOptions(it.children) }
 
+@Composable
+private fun CleanupDialog(
+    title: String,
+    options: List<CleanOption>,
+    geckoViewModel: GeckoViewModel,
+    onDismiss: () -> Unit
+) {
+    val flatOptions = remember { flattenCleanOptions(options) }
+    var selectedFlags by remember { mutableStateOf(setOf<Long>()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = selectedFlags.isNotEmpty(),
+                onClick = {
+                    val flags = selectedFlags.fold(0L) { acc, flag -> acc or flag }
+                    geckoViewModel.runtime.storageController.clearData(flags)
+                    onDismiss()
+                }
+            ) { Text("清理") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        },
+        title = { Text(title) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                flatOptions.forEach { opt ->
+                    val coveredByAncestor = opt.parentFlags.any { it in selectedFlags }
+                    val isSelected = opt.flag in selectedFlags
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = (opt.depth * 24).dp)
+                            .alpha(if (coveredByAncestor) 0.38f else 1f)
+                            .clickable(enabled = !coveredByAncestor) {
+                                selectedFlags = if (isSelected) {
+                                    selectedFlags - opt.flag
+                                } else {
+                                    selectedFlags + opt.flag
+                                }
+                            }
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Checkbox(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            checked = isSelected || coveredByAncestor,
+                            onCheckedChange = null,
+                            enabled = !coveredByAncestor
+                        )
+                        Text(opt.label)
+                    }
+                }
+            }
+        }
+    )
+}
+
 /**
  * 数据清理卡片，提供多类型缓存清除操作。
  */
 @Composable
 internal fun CleanupCard() {
     val geckoViewModel: GeckoViewModel = viewModel()
+    var showCacheDialog by remember { mutableStateOf(false) }
     var showCleanupDialog by remember { mutableStateOf(false) }
 
     ElevatedCard(
@@ -106,7 +164,7 @@ internal fun CleanupCard() {
 
             OutlinedButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { showCleanupDialog = true }
+                onClick = { showCacheDialog = true }
             ) {
                 Icon(
                     Icons.Rounded.CleaningServices,
@@ -114,65 +172,43 @@ internal fun CleanupCard() {
                     Modifier.size(18.dp)
                 )
                 Text(
-                    text = "清理数据",
+                    text = "清理缓存",
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showCleanupDialog = true }
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = null,
+                    Modifier.size(18.dp)
+                )
+                Text(
+                    text = "清除数据",
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
         }
     }
 
+    if (showCacheDialog) {
+        CleanupDialog(
+            title = "清理缓存",
+            options = buildCacheOptionTree(),
+            geckoViewModel = geckoViewModel,
+            onDismiss = { showCacheDialog = false }
+        )
+    }
+
     if (showCleanupDialog) {
-        val flatOptions = remember { flattenCleanOptions(buildCleanOptionTree()) }
-        var selectedFlags by remember { mutableStateOf(setOf<Long>()) }
-
-        AlertDialog(
-            onDismissRequest = { showCleanupDialog = false },
-            confirmButton = {
-                TextButton(
-                    enabled = selectedFlags.isNotEmpty(),
-                    onClick = {
-                        val flags = selectedFlags.fold(0L) { acc, flag -> acc or flag }
-                        geckoViewModel.runtime.storageController.clearData(flags)
-                        showCleanupDialog = false
-                    }
-                ) { Text("清理") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCleanupDialog = false }) { Text("取消") }
-            },
-            title = { Text("清理数据") },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    flatOptions.forEach { opt ->
-                        val coveredByAncestor = opt.parentFlags.any { it in selectedFlags }
-                        val isSelected = opt.flag in selectedFlags
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = (opt.depth * 24).dp)
-                                .alpha(if (coveredByAncestor) 0.38f else 1f)
-                                .clickable(enabled = !coveredByAncestor) {
-                                    selectedFlags = if (isSelected) {
-                                        selectedFlags - opt.flag
-                                    } else {
-                                        selectedFlags + opt.flag
-                                    }
-                                }
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Checkbox(
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                                checked = isSelected || coveredByAncestor,
-                                onCheckedChange = null,
-                                enabled = !coveredByAncestor
-                            )
-                            Text(opt.label)
-                        }
-                    }
-                }
-            }
+        CleanupDialog(
+            title = "清除数据",
+            options = buildCleanOptionTree(),
+            geckoViewModel = geckoViewModel,
+            onDismiss = { showCleanupDialog = false }
         )
     }
 }

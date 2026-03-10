@@ -6,8 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,7 +65,9 @@ fun UrlEntryScreen() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            CenterAlignedTopAppBar(title = { Text("Bridge") })
+            if (selectedTab == 0) {
+                CenterAlignedTopAppBar(title = { Text("Bridge") })
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -78,7 +80,7 @@ fun UrlEntryScreen() {
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Rounded.AdminPanelSettings, contentDescription = null) },
+                    icon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
                     label = { Text("管理") }
                 )
             }

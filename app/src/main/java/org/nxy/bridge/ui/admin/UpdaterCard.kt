@@ -1,6 +1,7 @@
 package org.nxy.bridge.ui.admin
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,6 +12,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +28,13 @@ import androidx.compose.material.icons.rounded.GetApp
 import androidx.compose.material.icons.rounded.Hardware
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -38,13 +45,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.nxy.bridge.ui.component.StatusChip
@@ -124,23 +131,38 @@ fun UpdaterCard() {
                     Box(modifier = Modifier.graphicsLayer { alpha = chipAlpha }) {
                         if (isServiceDiscovered) {
                             StatusChip(
-                                label = {
-                                    Text(
-                                        "${discoveredService.host}:${discoveredService.port}",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
+                                label = { Text("已连接") },
                                 containerColor = if (isDark) successContainerDark else successContainerLight,
                                 labelColor = if (isDark) onSuccessContainerDark else onSuccessContainerLight,
-                                border = BorderStroke(0.dp, Color.Transparent)
+                                border = BorderStroke(0.dp, Color.Transparent),
+                                icon = {
+                                    Icon(
+                                        Icons.Rounded.Wifi,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    Toast.makeText(
+                                        context,
+                                        "已连接至 ${discoveredService.host}:${discoveredService.port}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             )
                         } else {
                             StatusChip(
                                 label = { Text("未连接") },
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 labelColor = MaterialTheme.colorScheme.onErrorContainer,
-                                border = BorderStroke(0.dp, Color.Transparent)
+                                border = BorderStroke(0.dp, Color.Transparent),
+                                icon = {
+                                    Icon(
+                                        Icons.Rounded.WifiOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             )
                         }
                     }
@@ -298,53 +320,160 @@ fun UpdaterCard() {
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                val checkInteraction = remember { MutableInteractionSource() }
+                val downloadInteraction = remember { MutableInteractionSource() }
+                val installInteraction = remember { MutableInteractionSource() }
+                val deleteInteraction = remember { MutableInteractionSource() }
+
+                ButtonGroup(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp)
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    overflowIndicator = { menuState ->
+                        ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
+                    }
                 ) {
-                    Button(
-                        enabled = !(viewModel.checking || viewModel.downloading),
-                        modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = {
-                            discoveredService?.let {
-                                viewModel.checkForUpdates(
-                                    it.baseUrl,
-                                    it.path
-                                )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                enabled = !(viewModel.checking || viewModel.downloading),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(checkInteraction),
+                                interactionSource = checkInteraction,
+                                contentPadding = PaddingValues(0.dp),
+                                onClick = {
+                                    discoveredService?.let {
+                                        viewModel.checkForUpdates(
+                                            it.baseUrl,
+                                            it.path
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Rounded.Refresh, contentDescription = "检查更新")
                             }
+                        },
+                        menuContent = { menuState ->
+                            DropdownMenuItem(
+                                text = { Text("检查更新") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Refresh, contentDescription = null)
+                                },
+                                onClick = {
+                                    menuState.dismiss()
+                                    discoveredService?.let {
+                                        viewModel.checkForUpdates(
+                                            it.baseUrl,
+                                            it.path
+                                        )
+                                    }
+                                }
+                            )
                         }
-                    ) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "检查更新")
-                    }
+                    )
 
-                    Button(
-                        enabled = viewModel.hasUpdate && viewModel.latest != null && !viewModel.hasCache && !(viewModel.checking || viewModel.downloading),
-                        modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = { viewModel.downloadUpdate() }
-                    ) {
-                        Icon(Icons.Rounded.GetApp, contentDescription = "下载更新")
-                    }
-
-                    Button(
-                        enabled = viewModel.hasCache && !(viewModel.checking || viewModel.downloading),
-                        modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = {
-                            installApk(context, getCacheApkFile(context))
-                            viewModel.refreshCacheStatus()
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                enabled = viewModel.hasUpdate &&
+                                        viewModel.latest != null &&
+                                        !viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(downloadInteraction),
+                                interactionSource = downloadInteraction,
+                                contentPadding = PaddingValues(0.dp),
+                                onClick = { viewModel.downloadUpdate() }
+                            ) {
+                                Icon(Icons.Rounded.GetApp, contentDescription = "下载更新")
+                            }
+                        },
+                        menuContent = { menuState ->
+                            DropdownMenuItem(
+                                text = { Text("下载更新") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.GetApp, contentDescription = null)
+                                },
+                                enabled = viewModel.hasUpdate &&
+                                        viewModel.latest != null &&
+                                        !viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                onClick = {
+                                    menuState.dismiss()
+                                    viewModel.downloadUpdate()
+                                }
+                            )
                         }
-                    ) {
-                        Icon(Icons.Rounded.Hardware, contentDescription = "安装更新")
-                    }
+                    )
 
-                    Button(
-                        enabled = viewModel.hasCache && !(viewModel.checking || viewModel.downloading),
-                        modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp),
-                        onClick = { viewModel.deleteCache() }
-                    ) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "删除安装包")
-                    }
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                enabled = viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(installInteraction),
+                                interactionSource = installInteraction,
+                                contentPadding = PaddingValues(0.dp),
+                                onClick = {
+                                    installApk(context, getCacheApkFile(context))
+                                    viewModel.refreshCacheStatus()
+                                }
+                            ) {
+                                Icon(Icons.Rounded.Hardware, contentDescription = "安装更新")
+                            }
+                        },
+                        menuContent = { menuState ->
+                            DropdownMenuItem(
+                                text = { Text("安装更新") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Hardware, contentDescription = null)
+                                },
+                                enabled = viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                onClick = {
+                                    menuState.dismiss()
+                                    installApk(context, getCacheApkFile(context))
+                                    viewModel.refreshCacheStatus()
+                                }
+                            )
+                        }
+                    )
+
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                enabled = viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(deleteInteraction),
+                                interactionSource = deleteInteraction,
+                                contentPadding = PaddingValues(0.dp),
+                                onClick = { viewModel.deleteCache() }
+                            ) {
+                                Icon(Icons.Rounded.Delete, contentDescription = "删除安装包")
+                            }
+                        },
+                        menuContent = { menuState ->
+                            DropdownMenuItem(
+                                text = { Text("删除安装包") },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Delete, contentDescription = null)
+                                },
+                                enabled = viewModel.hasCache &&
+                                        !(viewModel.checking || viewModel.downloading),
+                                onClick = {
+                                    menuState.dismiss()
+                                    viewModel.deleteCache()
+                                }
+                            )
+                        }
+                    )
                 }
             }
         }

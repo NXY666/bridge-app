@@ -1,6 +1,7 @@
 package org.nxy.bridge.ui.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -31,6 +32,7 @@ fun StatusChip(
     containerColor: Color,
     labelColor: Color,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     icon: @Composable (() -> Unit)? = null,
     iconContentColor: Color = labelColor,
     shape: Shape = SuggestionChipDefaults.shape,
@@ -41,7 +43,7 @@ fun StatusChip(
     labelTextStyle: TextStyle = MaterialTheme.typography.labelLarge,
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = shape,
         color = containerColor,
         contentColor = labelColor,

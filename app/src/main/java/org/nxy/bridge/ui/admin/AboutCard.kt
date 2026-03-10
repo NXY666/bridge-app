@@ -2,14 +2,16 @@ package org.nxy.bridge.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +34,7 @@ internal fun AboutCard() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(text = "关于", style = MaterialTheme.typography.headlineSmall)
 
@@ -44,7 +46,8 @@ internal fun AboutCard() {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = "Bridge App",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = "NXY",
@@ -52,14 +55,16 @@ internal fun AboutCard() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                IconButton(
-                    onClick = { uriHandler.openUri("https://github.com/NXY666/bridge-app") }
+                FilledTonalButton(
+                    onClick = { uriHandler.openUri("https://github.com/NXY666/bridge-app") },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Rounded.OpenInNew,
-                        contentDescription = "打开仓库",
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
+                    Text(text = "仓库", modifier = Modifier.padding(start = 4.dp))
                 }
             }
         }

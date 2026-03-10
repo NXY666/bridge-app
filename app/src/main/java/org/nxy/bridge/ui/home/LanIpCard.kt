@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -120,7 +120,7 @@ fun LanIpCard(
                     )
                 }
                 IconButton(onClick = reload) {
-                    Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    Icon(Icons.Rounded.Refresh, contentDescription = "刷新")
                 }
             }
         }
