@@ -80,7 +80,12 @@ class UpdaterViewModel : ViewModel() {
         downloadHasTotal = true
 
         viewModelScope.launch {
-            val success = downloadToCache(App.context, sv.downloadUrl, cachedApk, sv.sha256) { downloaded, total ->
+            val success = downloadToCache(
+                App.context,
+                sv.downloadUrl,
+                cachedApk,
+                sv.sha256
+            ) { downloaded, total ->
                 if (total > 0) {
                     downloadHasTotal = true
                     downloadProgress = downloaded.toFloat() / total.toFloat()
@@ -149,7 +154,9 @@ class UpdaterViewModel : ViewModel() {
                 val vCode = data?.optLong("versionCode", -1L) ?: -1L
                 val downUrl = data?.optJSONObject("downUrl")
                 val localUrl = downUrl?.takeIf { !it.isNull("local") }?.optString("local")
-                val downloadUrl = if (!localUrl.isNullOrBlank()) localUrl else downUrl?.optString("github").orEmpty()
+                val downloadUrl =
+                    if (!localUrl.isNullOrBlank()) localUrl else downUrl?.optString("github")
+                        .orEmpty()
                 val sha256 = data?.optString("sha256").orEmpty()
                 if (vCode <= 0 || downloadUrl.isBlank()) {
                     withContext(Dispatchers.Main) {
@@ -245,7 +252,8 @@ class UpdaterViewModel : ViewModel() {
                     val actual = computeSha256(target)
                     if (actual != expectedSha256) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "安装包验证失败，请重新下载", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "安装包验证失败，请重新下载", Toast.LENGTH_SHORT)
+                                .show()
                         }
                         target.delete()
                         return@use false

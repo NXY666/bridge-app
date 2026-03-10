@@ -46,8 +46,18 @@ private fun buildCacheOptionTree(): List<CleanOption> {
     return listOf(
         CleanOption(
             "全部", allCachesFlag, 0, emptySet(), listOf(
-                CleanOption("图片缓存", StorageController.ClearFlags.IMAGE_CACHE, 1, setOf(allCachesFlag)),
-                CleanOption("网络缓存", StorageController.ClearFlags.NETWORK_CACHE, 1, setOf(allCachesFlag)),
+                CleanOption(
+                    "图片缓存",
+                    StorageController.ClearFlags.IMAGE_CACHE,
+                    1,
+                    setOf(allCachesFlag)
+                ),
+                CleanOption(
+                    "网络缓存",
+                    StorageController.ClearFlags.NETWORK_CACHE,
+                    1,
+                    setOf(allCachesFlag)
+                ),
             )
         )
     )

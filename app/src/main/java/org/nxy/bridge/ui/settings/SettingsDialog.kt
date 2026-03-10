@@ -61,8 +61,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.nxy.bridge.ui.model.MainViewModel
 import org.nxy.bridge.ui.model.BridgeDiscoveryViewModel
+import org.nxy.bridge.ui.model.MainViewModel
 
 /**
  * 设置对话框：URL、服务发现与参数编辑。

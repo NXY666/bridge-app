@@ -160,11 +160,11 @@ class BrowserActivity : ComponentActivity() {
                         geckoView ?: GeckoView(ctx).also { view ->
                             geckoView = view
                             view.setSession(geckoVM.session)
-                                val url = intent.getStringExtra(KEY_URL)
-                                    ?: getSavedUrl(this@BrowserActivity)
-                                if (!url.isNullOrEmpty()) {
-                                    geckoVM.loadUrl(url)
-                                }
+                            val url = intent.getStringExtra(KEY_URL)
+                                ?: getSavedUrl(this@BrowserActivity)
+                            if (!url.isNullOrEmpty()) {
+                                geckoVM.loadUrl(url)
+                            }
                         }
                     }
                 )
