@@ -1,10 +1,6 @@
 package org.nxy.bridge.ui.admin
 
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.provider.Settings
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -50,16 +46,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.nxy.bridge.ui.model.UpdaterDiscoveryViewModel
 import org.nxy.bridge.ui.component.StatusChip
+import org.nxy.bridge.ui.model.UpdaterDiscoveryViewModel
 import org.nxy.bridge.ui.model.UpdaterViewModel
 import org.nxy.bridge.ui.theme.onSuccessContainerDark
 import org.nxy.bridge.ui.theme.onSuccessContainerLight
 import org.nxy.bridge.ui.theme.successContainerDark
 import org.nxy.bridge.ui.theme.successContainerLight
+import org.nxy.bridge.util.ApkInstaller.installApk
 import java.io.File
 
 data class ServerVersion(
@@ -357,37 +352,3 @@ fun UpdaterCard() {
 }
 
 fun getCacheApkFile(context: Context): File = File(context.cacheDir, "update.apk")
-
-internal fun installApk(context: Context, file: File) {
-    try {
-        if (!file.exists()) {
-            Toast.makeText(context, "安装包不存在", Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val pm = context.packageManager
-            if (!pm.canRequestPackageInstalls()) {
-                Toast.makeText(context, "请授予安装权限", Toast.LENGTH_LONG).show()
-                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = ("package:" + context.packageName).toUri()
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-                return
-            }
-        }
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    } catch (e: Exception) {
-        Toast.makeText(context, "无法打开安装包: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}

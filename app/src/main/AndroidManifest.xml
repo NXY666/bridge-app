@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"
         tools:ignore="RequestInstallPackagesPolicy" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
@@ -40,6 +41,10 @@
             android:exported="false"
             android:showOnLockScreen="true"
             android:theme="@style/Theme.Bridge" />
+
+        <receiver
+            android:name=".util.ApkInstallResultReceiver"
+            android:exported="false" />
 
         <!-- FileProvider 用于安装 APK 时授予临时读取权限 -->
         <provider
