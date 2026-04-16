@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -81,6 +82,7 @@ fun SettingsDialog(
 
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
+    var keepScreenOnInput by rememberSaveable { mutableStateOf(mainViewModel.keepScreenOn) }
     var parametersInput by rememberSaveable { mutableStateOf(mainViewModel.parameters) }
 
     var showEditSheet by rememberSaveable { mutableStateOf(false) }
@@ -94,6 +96,7 @@ fun SettingsDialog(
             onClick = {
                 mainViewModel.url = urlInput
                 mainViewModel.landscape = landscapeInput
+                mainViewModel.keepScreenOn = keepScreenOnInput
                 mainViewModel.parameters = parametersInput
                 onDismiss()
             }
@@ -408,6 +411,23 @@ fun SettingsDialog(
                         modifier = Modifier
                             .defaultMinSize(minHeight = 32.dp)
                             .weight(1f)
+                    )
+                }
+            }
+
+            Column {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "屏幕常亮",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = keepScreenOnInput,
+                        onCheckedChange = { keepScreenOnInput = it }
                     )
                 }
             }

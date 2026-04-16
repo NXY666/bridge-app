@@ -38,6 +38,14 @@ class MainViewModel : ViewModel() {
             saveLandscapeToPrefs(value)
         }
 
+    private var _keepScreenOn by mutableStateOf(loadKeepScreenOnEnabled())
+    var keepScreenOn: Boolean
+        get() = _keepScreenOn
+        set(value) {
+            _keepScreenOn = value
+            saveKeepScreenOnToPrefs(value)
+        }
+
     private var _parameters by mutableStateOf(loadSavedParameters())
     var parameters: Map<String, String>
         get() = _parameters
@@ -54,6 +62,11 @@ class MainViewModel : ViewModel() {
     private fun loadLandscapeEnabled(): Boolean {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_LANDSCAPE, true)
+    }
+
+    private fun loadKeepScreenOnEnabled(): Boolean {
+        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_KEEP_SCREEN_ON, false)
     }
 
     private fun loadSavedParameters(): Map<String, String> {
@@ -76,6 +89,11 @@ class MainViewModel : ViewModel() {
     private fun saveLandscapeToPrefs(enabled: Boolean) {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         prefs.edit { putBoolean(KEY_LANDSCAPE, enabled) }
+    }
+
+    private fun saveKeepScreenOnToPrefs(enabled: Boolean) {
+        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_KEEP_SCREEN_ON, enabled) }
     }
 
     private fun saveParametersToPrefs(parameters: Map<String, String>) {

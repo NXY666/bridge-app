@@ -19,6 +19,7 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.nxy.bridge.ui.model.GeckoViewModel
+import org.nxy.bridge.ui.model.KEY_KEEP_SCREEN_ON
 import org.nxy.bridge.ui.model.KEY_LANDSCAPE
 import org.nxy.bridge.ui.model.KEY_URL
 import org.nxy.bridge.ui.model.PREFS
@@ -148,6 +149,13 @@ class BrowserActivity : ComponentActivity() {
         val landscape = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_LANDSCAPE, true)
         requestedOrientation =
             if (landscape) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+        val keepScreenOn = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_KEEP_SCREEN_ON, false)
+        if (keepScreenOn) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
 
         onBackPressedDispatcher.addCallback(this, true) {
             // 特殊处理：禁用返回键
