@@ -208,6 +208,7 @@ fun SettingsDialog(
                                     .clickable {
                                         urlInput = service.url
                                         service.landscape?.let { landscapeInput = it }
+                                        service.keepScreenOn?.let { keepScreenOnInput = it }
                                         service.parameters?.let { parametersInput = it }
                                         bridgeDiscoveryViewModel.stopDiscovery()
                                         bridgeDiscoveryViewModel.clearServices()
@@ -251,6 +252,7 @@ fun SettingsDialog(
                                     val chipLabels = buildList {
                                         service.parameters?.entries?.forEach { add("${it.key}=${it.value}") }
                                         service.landscape?.let { add(if (it) "横屏" else "竖屏") }
+                                        service.keepScreenOn?.let { if (it) add("屏幕常亮") }
                                     }
                                     if (chipLabels.isNotEmpty()) {
                                         FlowRow(
