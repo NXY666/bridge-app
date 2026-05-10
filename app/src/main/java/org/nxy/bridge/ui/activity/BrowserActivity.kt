@@ -5,12 +5,17 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -164,15 +169,28 @@ class BrowserActivity : ComponentActivity() {
         setContent {
             BridgeTheme(dynamicColor = false) {
                 AndroidView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clipToBounds(),
                     factory = { ctx ->
-                        geckoView ?: GeckoView(ctx).also { view ->
-                            geckoView = view
-                            view.setSession(geckoVM.session)
-                            val url = intent.getStringExtra(KEY_URL)
-                                ?: getSavedUrl(this@BrowserActivity)
-                            if (!url.isNullOrEmpty()) {
-                                geckoVM.loadUrl(url)
-                            }
+                        FrameLayout(ctx).apply {
+                            clipChildren = true
+                            clipToPadding = true
+                            addView(
+                                GeckoView(ctx).also { view ->
+                                    geckoView = view
+                                    view.setSession(geckoVM.session)
+                                    val url = intent.getStringExtra(KEY_URL)
+                                        ?: getSavedUrl(this@BrowserActivity)
+                                    if (!url.isNullOrEmpty()) {
+                                        geckoVM.loadUrl(url)
+                                    }
+                                },
+                                FrameLayout.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            )
                         }
                     }
                 )
