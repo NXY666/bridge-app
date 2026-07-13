@@ -14,6 +14,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.viewinterop.AndroidView
@@ -37,6 +40,10 @@ class BrowserActivity : ComponentActivity() {
 
     private var geckoView: GeckoView? = null
     private val geckoVM: GeckoViewModel by viewModels()
+    private var promptState by mutableStateOf<BrowserPromptState?>(null)
+    private val promptDelegate by lazy {
+        BrowserPromptDelegate { state -> promptState = state }
+    }
 
     interface AndroidPermissionRequester {
         fun request(permissions: Array<String>, onResult: (allGranted: Boolean) -> Unit)
@@ -140,6 +147,7 @@ class BrowserActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         geckoVM.session.permissionDelegate = AutoGrantPermissionDelegate(requester)
+        geckoVM.session.promptDelegate = promptDelegate
         geckoVM.open()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -194,6 +202,10 @@ class BrowserActivity : ComponentActivity() {
                         }
                     }
                 )
+                BrowserPromptHost(
+                    state = promptState,
+                    delegate = promptDelegate
+                )
             }
         }
     }
@@ -204,6 +216,10 @@ class BrowserActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        promptDelegate.dismissCurrent()
+        if (geckoVM.session.promptDelegate === promptDelegate) {
+            geckoVM.session.promptDelegate = null
+        }
         super.onDestroy()
     }
 
