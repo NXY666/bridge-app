@@ -2,6 +2,7 @@ package org.nxy.bridge.ui.model
 
 import android.content.Context
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
@@ -15,7 +16,7 @@ import org.nxy.bridge.App
 class MainViewModel : ViewModel() {
 
     // 管理页解锁时间戳，0 表示未解锁
-    var adminUnlockTime by mutableStateOf(0L)
+    var adminUnlockTime by mutableLongStateOf(0L)
 
     // 5分钟内是否已解锁
     val isAdminUnlocked: Boolean

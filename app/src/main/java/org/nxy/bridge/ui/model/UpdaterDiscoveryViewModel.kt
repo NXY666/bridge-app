@@ -312,7 +312,6 @@ class UpdaterDiscoveryViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
         stopDiscovery()
     }
 }

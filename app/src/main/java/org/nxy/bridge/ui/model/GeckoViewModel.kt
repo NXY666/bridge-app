@@ -36,7 +36,6 @@ class GeckoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        super.onCleared()
         try {
             if (session.isOpen) session.close()
         } catch (_: Exception) {

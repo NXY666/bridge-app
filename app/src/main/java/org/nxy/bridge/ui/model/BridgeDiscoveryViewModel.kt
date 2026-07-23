@@ -41,12 +41,6 @@ class BridgeDiscoveryViewModel : ViewModel() {
         val keepScreenOn: Boolean? = null,
         val parameters: Map<String, String>? = null
     ) {
-        val baseUrl: String
-            get() = Uri.Builder()
-                .scheme(scheme)
-                .encodedAuthority("$host:$port")
-                .build()
-                .toString()
         val url: String
             get() = Uri.Builder()
                 .scheme(scheme)
@@ -264,7 +258,6 @@ class BridgeDiscoveryViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
         stopDiscovery()
     }
 }

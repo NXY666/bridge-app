@@ -275,7 +275,25 @@ private data class ChoiceRow(
 private data class MenuLevel(
     val title: String,
     val choices: Array<ChoicePrompt.Choice>
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MenuLevel
+
+        if (title != other.title) return false
+        if (!choices.contentEquals(other.choices)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = title.hashCode()
+        result = 31 * result + choices.contentHashCode()
+        return result
+    }
+}
 
 private fun flattenChoices(
     choices: Array<ChoicePrompt.Choice>,
@@ -283,7 +301,7 @@ private fun flattenChoices(
 ): List<ChoiceRow> {
     return choices.flatMap { choice ->
         listOf(ChoiceRow(choice, depth)) +
-            (choice.items?.let { flattenChoices(it, depth + 1) } ?: emptyList())
+                (choice.items?.let { flattenChoices(it, depth + 1) } ?: emptyList())
     }
 }
 
@@ -418,7 +436,7 @@ private fun ChoiceItem(
 
     val isGroup = !choice.items.isNullOrEmpty()
     val isSelectable = !choice.disabled &&
-        (type == ChoicePrompt.Type.MENU || !isGroup)
+            (type == ChoicePrompt.Type.MENU || !isGroup)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
