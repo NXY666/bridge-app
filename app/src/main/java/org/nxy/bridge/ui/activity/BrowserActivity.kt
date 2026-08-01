@@ -3,8 +3,10 @@ package org.nxy.bridge.ui.activity
 import android.Manifest
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.FrameLayout
@@ -26,6 +28,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
+import org.mozilla.geckoview.WebRequestError
 import org.nxy.bridge.ui.model.GeckoViewModel
 import org.nxy.bridge.ui.model.KEY_KEEP_SCREEN_ON
 import org.nxy.bridge.ui.model.KEY_LANDSCAPE
@@ -148,6 +151,25 @@ class BrowserActivity : ComponentActivity() {
 
         geckoVM.session.permissionDelegate = AutoGrantPermissionDelegate(requester)
         geckoVM.session.promptDelegate = promptDelegate
+        geckoVM.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            override fun onLoadError(
+                session: GeckoSession,
+                uri: String?,
+                error: WebRequestError
+            ): GeckoResult<String>? {
+                if (uri.isNullOrEmpty() || !uri.startsWith("https://", ignoreCase = true)) {
+                    return null
+                }
+
+                if (error.category != WebRequestError.ERROR_CATEGORY_SECURITY ||
+                    error.code != WebRequestError.ERROR_SECURITY_BAD_CERT
+                ) {
+                    return null
+                }
+
+                return GeckoResult.fromValue(buildCertificateErrorPage(uri))
+            }
+        }
         geckoVM.open()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -214,6 +236,25 @@ class BrowserActivity : ComponentActivity() {
     private fun getSavedUrl(context: Context): String? {
         val prefs = context.getSharedPreferences(PREFS, MODE_PRIVATE)
         return prefs.getString(KEY_URL, null)
+    }
+
+    private fun buildCertificateErrorPage(uri: String): String {
+        val encodedUri = Uri.encode(uri)
+        val html = """
+            <!doctype html>
+            <meta charset="utf-8">
+            <title>证书错误</title>
+            <script>
+            const failedUri = decodeURIComponent('$encodedUri');
+            if (window.confirm('此网站提供的证书无效，是否信任此证书？')) {
+                document.addCertException(false).then(function () {
+                    location.replace(failedUri);
+                });
+            }
+            </script>
+        """.trimIndent()
+        val encodedHtml = Base64.encodeToString(html.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        return "data:text/html;base64,$encodedHtml"
     }
 
     override fun onDestroy() {
