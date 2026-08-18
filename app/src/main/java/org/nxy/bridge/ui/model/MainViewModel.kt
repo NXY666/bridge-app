@@ -55,6 +55,14 @@ class MainViewModel : ViewModel() {
             saveParametersToPrefs(value)
         }
 
+    private var _disableBack by mutableStateOf(loadDisableBackEnabled())
+    var disableBack: Boolean
+        get() = _disableBack
+        set(value) {
+            _disableBack = value
+            saveDisableBackToPrefs(value)
+        }
+
     private fun loadSavedUrl(): String {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return prefs.getString(KEY_URL, "") ?: ""
@@ -101,6 +109,16 @@ class MainViewModel : ViewModel() {
         val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val json = Gson().toJson(parameters)
         prefs.edit { putString(KEY_PARAMETERS, json) }
+    }
+
+    private fun loadDisableBackEnabled(): Boolean {
+        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_DISABLE_BACK, false)
+    }
+
+    private fun saveDisableBackToPrefs(enabled: Boolean) {
+        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_DISABLE_BACK, enabled) }
     }
 
     private fun normalizeUrl(input: String): String {

@@ -39,6 +39,7 @@ class BridgeDiscoveryViewModel : ViewModel() {
         val path: String = "",
         val landscape: Boolean? = null,
         val keepScreenOn: Boolean? = null,
+        val disableBack: Boolean? = null,
         val parameters: Map<String, String>? = null
     ) {
         val url: String
@@ -145,7 +146,8 @@ class BridgeDiscoveryViewModel : ViewModel() {
                             }.getOrNull()
                         },
                         landscape = attr("landscape")?.let { it == "true" },
-                        keepScreenOn = attr("keepScreenOn")?.let { it == "true" }
+                        keepScreenOn = attr("keepScreenOn")?.let { it == "true" },
+                        disableBack = attr("disableBack")?.let { it == "true" }
                     )
                     updateServices()
                 }
@@ -201,7 +203,8 @@ class BridgeDiscoveryViewModel : ViewModel() {
                                 }.getOrNull()
                             },
                             landscape = attr("landscape")?.let { it == "true" },
-                            keepScreenOn = attr("keepScreenOn")?.let { it == "true" }
+                            keepScreenOn = attr("keepScreenOn")?.let { it == "true" },
+                            disableBack = attr("disableBack")?.let { it == "true" }
                         )
                         updateServices()
                     }

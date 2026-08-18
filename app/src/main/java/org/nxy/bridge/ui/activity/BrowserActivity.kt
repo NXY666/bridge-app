@@ -30,6 +30,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebRequestError
 import org.nxy.bridge.ui.model.GeckoViewModel
+import org.nxy.bridge.ui.model.KEY_DISABLE_BACK
 import org.nxy.bridge.ui.model.KEY_KEEP_SCREEN_ON
 import org.nxy.bridge.ui.model.KEY_LANDSCAPE
 import org.nxy.bridge.ui.model.KEY_URL
@@ -43,6 +44,7 @@ class BrowserActivity : ComponentActivity() {
 
     private var geckoView: GeckoView? = null
     private val geckoVM: GeckoViewModel by viewModels()
+    private var canGoBack by mutableStateOf(false)
     private var promptState by mutableStateOf<BrowserPromptState?>(null)
     private val promptDelegate by lazy {
         BrowserPromptDelegate { state -> promptState = state }
@@ -152,6 +154,13 @@ class BrowserActivity : ComponentActivity() {
         geckoVM.session.permissionDelegate = AutoGrantPermissionDelegate(requester)
         geckoVM.session.promptDelegate = promptDelegate
         geckoVM.session.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            override fun onCanGoBack(
+                session: GeckoSession,
+                canGoBack: Boolean
+            ) {
+                this@BrowserActivity.canGoBack = canGoBack
+            }
+
             override fun onLoadError(
                 session: GeckoSession,
                 uri: String?,
@@ -193,8 +202,12 @@ class BrowserActivity : ComponentActivity() {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
 
+        val disableBack =
+            getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_DISABLE_BACK, false)
         onBackPressedDispatcher.addCallback(this, true) {
-            // 特殊处理：禁用返回键
+            if (!disableBack && canGoBack) {
+                geckoVM.session.goBack()
+            }
         }
 
         setContent {

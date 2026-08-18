@@ -84,6 +84,7 @@ fun SettingsDialog(
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
     var keepScreenOnInput by rememberSaveable { mutableStateOf(mainViewModel.keepScreenOn) }
+    var disableBackInput by rememberSaveable { mutableStateOf(mainViewModel.disableBack) }
     var parametersInput by rememberSaveable { mutableStateOf(mainViewModel.parameters) }
 
     var showEditSheet by rememberSaveable { mutableStateOf(false) }
@@ -98,6 +99,7 @@ fun SettingsDialog(
                 mainViewModel.url = urlInput
                 mainViewModel.landscape = landscapeInput
                 mainViewModel.keepScreenOn = keepScreenOnInput
+                mainViewModel.disableBack = disableBackInput
                 mainViewModel.parameters = parametersInput
                 onDismiss()
             }
@@ -210,6 +212,7 @@ fun SettingsDialog(
                                         urlInput = service.url
                                         service.landscape?.let { landscapeInput = it }
                                         service.keepScreenOn?.let { keepScreenOnInput = it }
+                                        service.disableBack?.let { disableBackInput = it }
                                         service.parameters?.let { parametersInput = it }
                                         bridgeDiscoveryViewModel.stopDiscovery()
                                         bridgeDiscoveryViewModel.clearServices()
@@ -431,6 +434,23 @@ fun SettingsDialog(
                     Switch(
                         checked = keepScreenOnInput,
                         onCheckedChange = { keepScreenOnInput = it }
+                    )
+                }
+            }
+
+            Column {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "禁用返回键",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = disableBackInput,
+                        onCheckedChange = { disableBackInput = it }
                     )
                 }
             }
