@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.nxy.bridge.ui.activity.BrowserActivity
-import org.nxy.bridge.ui.model.KEY_URL
 import org.nxy.bridge.ui.model.MainViewModel
+import org.nxy.bridge.ui.model.PreferenceKeys
 
 /**
  * 浏览卡片，提供 URL 展示与启动入口。
@@ -50,7 +50,7 @@ fun BrowseCard(
                     val final = mainViewModel.getUrlWithParameters()
                     if (final.isBlank()) return@Button
                     val intent = Intent(context, BrowserActivity::class.java)
-                    intent.putExtra(KEY_URL, final)
+                    intent.putExtra(PreferenceKeys.KEY_URL, final)
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                 },

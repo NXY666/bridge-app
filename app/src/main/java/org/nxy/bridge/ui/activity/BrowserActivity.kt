@@ -30,11 +30,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebRequestError
 import org.nxy.bridge.ui.model.GeckoViewModel
-import org.nxy.bridge.ui.model.KEY_DISABLE_BACK
-import org.nxy.bridge.ui.model.KEY_KEEP_SCREEN_ON
-import org.nxy.bridge.ui.model.KEY_LANDSCAPE
-import org.nxy.bridge.ui.model.KEY_URL
-import org.nxy.bridge.ui.model.PREFS
+import org.nxy.bridge.ui.model.PreferenceKeys
 import org.nxy.bridge.ui.theme.BridgeTheme
 
 /**
@@ -190,12 +186,18 @@ class BrowserActivity : ComponentActivity() {
             }
         }
 
-        val landscape = getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_LANDSCAPE, true)
+        val landscape = getSharedPreferences(
+            PreferenceKeys.PREFS,
+            MODE_PRIVATE
+        ).getBoolean(PreferenceKeys.KEY_LANDSCAPE, true)
         requestedOrientation =
             if (landscape) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
         val keepScreenOn =
-            getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_KEEP_SCREEN_ON, false)
+            getSharedPreferences(
+                PreferenceKeys.PREFS,
+                MODE_PRIVATE
+            ).getBoolean(PreferenceKeys.KEY_KEEP_SCREEN_ON, false)
         if (keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
@@ -203,7 +205,10 @@ class BrowserActivity : ComponentActivity() {
         }
 
         val disableBack =
-            getSharedPreferences(PREFS, MODE_PRIVATE).getBoolean(KEY_DISABLE_BACK, false)
+            getSharedPreferences(
+                PreferenceKeys.PREFS,
+                MODE_PRIVATE
+            ).getBoolean(PreferenceKeys.KEY_DISABLE_BACK, false)
         onBackPressedDispatcher.addCallback(this, true) {
             if (!disableBack && canGoBack) {
                 geckoVM.session.goBack()
@@ -224,7 +229,7 @@ class BrowserActivity : ComponentActivity() {
                                 GeckoView(ctx).also { view ->
                                     geckoView = view
                                     view.setSession(geckoVM.session)
-                                    val url = intent.getStringExtra(KEY_URL)
+                                    val url = intent.getStringExtra(PreferenceKeys.KEY_URL)
                                         ?: getSavedUrl(this@BrowserActivity)
                                     if (!url.isNullOrEmpty()) {
                                         geckoVM.loadUrl(url)
@@ -247,8 +252,8 @@ class BrowserActivity : ComponentActivity() {
     }
 
     private fun getSavedUrl(context: Context): String? {
-        val prefs = context.getSharedPreferences(PREFS, MODE_PRIVATE)
-        return prefs.getString(KEY_URL, null)
+        val prefs = context.getSharedPreferences(PreferenceKeys.PREFS, MODE_PRIVATE)
+        return prefs.getString(PreferenceKeys.KEY_URL, null)
     }
 
     private fun buildCertificateErrorPage(uri: String): String {

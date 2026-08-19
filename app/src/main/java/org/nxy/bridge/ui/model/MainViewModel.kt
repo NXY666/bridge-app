@@ -64,23 +64,23 @@ class MainViewModel : ViewModel() {
         }
 
     private fun loadSavedUrl(): String {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_URL, "") ?: ""
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getString(PreferenceKeys.KEY_URL, "") ?: ""
     }
 
     private fun loadLandscapeEnabled(): Boolean {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_LANDSCAPE, true)
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(PreferenceKeys.KEY_LANDSCAPE, true)
     }
 
     private fun loadKeepScreenOnEnabled(): Boolean {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_KEEP_SCREEN_ON, false)
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(PreferenceKeys.KEY_KEEP_SCREEN_ON, false)
     }
 
     private fun loadSavedParameters(): Map<String, String> {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val json = prefs.getString(KEY_PARAMETERS, "{}") ?: "{}"
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        val json = prefs.getString(PreferenceKeys.KEY_PARAMETERS, "{}") ?: "{}"
         return try {
             val type = object : TypeToken<Map<String, String>>() {}.type
             val result: Map<String, String>? = Gson().fromJson(json, type)
@@ -91,34 +91,34 @@ class MainViewModel : ViewModel() {
     }
 
     private fun saveUrlToPrefs(url: String?) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit { putString(KEY_URL, url) }
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putString(PreferenceKeys.KEY_URL, url) }
     }
 
     private fun saveLandscapeToPrefs(enabled: Boolean) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit { putBoolean(KEY_LANDSCAPE, enabled) }
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(PreferenceKeys.KEY_LANDSCAPE, enabled) }
     }
 
     private fun saveKeepScreenOnToPrefs(enabled: Boolean) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit { putBoolean(KEY_KEEP_SCREEN_ON, enabled) }
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(PreferenceKeys.KEY_KEEP_SCREEN_ON, enabled) }
     }
 
     private fun saveParametersToPrefs(parameters: Map<String, String>) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
         val json = Gson().toJson(parameters)
-        prefs.edit { putString(KEY_PARAMETERS, json) }
+        prefs.edit { putString(PreferenceKeys.KEY_PARAMETERS, json) }
     }
 
     private fun loadDisableBackEnabled(): Boolean {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_DISABLE_BACK, false)
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(PreferenceKeys.KEY_DISABLE_BACK, false)
     }
 
     private fun saveDisableBackToPrefs(enabled: Boolean) {
-        val prefs = App.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        prefs.edit { putBoolean(KEY_DISABLE_BACK, enabled) }
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(PreferenceKeys.KEY_DISABLE_BACK, enabled) }
     }
 
     private fun normalizeUrl(input: String): String {

@@ -28,7 +28,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.yield
-import org.nxy.bridge.ui.model.SETTINGS_PASSWORD
+
+// 管理页解锁密码
+private const val SETTINGS_PASSWORD = "1145"
 
 /**
  * 简易密码校验对话框，仅接受数字输入。
