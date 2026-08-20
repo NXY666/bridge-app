@@ -1,7 +1,13 @@
 package org.nxy.bridge.ui.model
 
 import android.app.Application
+import android.content.Context
+import android.util.Log
+import androidx.annotation.OptIn
 import androidx.lifecycle.AndroidViewModel
+import org.mozilla.geckoview.ExperimentalGeckoViewApi
+import org.mozilla.geckoview.GeckoPreferenceController
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 
@@ -12,6 +18,10 @@ import org.mozilla.geckoview.GeckoSession
  */
 class GeckoViewModel(app: Application) : AndroidViewModel(app) {
 
+    companion object {
+        private const val TAG = "GeckoViewModel"
+    }
+
     val runtime: GeckoRuntime by lazy { GeckoRuntimeHolder.get(app) }
 
     val session: GeckoSession by lazy { GeckoSession() }
@@ -21,18 +31,45 @@ class GeckoViewModel(app: Application) : AndroidViewModel(app) {
     var opened = false
         private set
 
+    private var compatibilityPreferenceResult: GeckoResult<Void>? = null
+
     fun open() {
         if (opened) return
         opened = true
 
         session.open(runtime)
+        compatibilityPreferenceResult = applyGeckoWorkaroundPref()
+    }
+
+    /**
+     * 兼容定制设备的网页视口行为，不写入 Gecko 用户配置。
+     */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    private fun applyGeckoWorkaroundPref(): GeckoResult<Void>? {
+        val enabled = getApplication<Application>()
+            .getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+            .getBoolean(PreferenceKeys.KEY_LEGACY_VIEWPORT, false)
+        if (!enabled) return null
+
+        return GeckoPreferenceController.setGeckoPref(
+            "dom.interactive_widget_default_resizes_visual",
+            false,
+            GeckoPreferenceController.PREF_BRANCH_DEFAULT
+        )
     }
 
     fun loadUrl(url: String) {
         if (urlLoaded) return
         urlLoaded = true
 
-        session.loadUri(url)
+        val loadUrl = { session.loadUri(url) }
+        compatibilityPreferenceResult?.accept(
+            { loadUrl() },
+            { error ->
+                Log.e(TAG, "Failed to apply legacy viewport preference", error)
+                loadUrl()
+            }
+        ) ?: loadUrl()
     }
 
     override fun onCleared() {

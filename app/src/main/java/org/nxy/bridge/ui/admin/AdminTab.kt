@@ -79,6 +79,7 @@ fun AdminTab(
         ServiceCard(mainViewModel = mainViewModel, onShowSettingsDialog = onShowSettingsDialog)
         UpdaterCard()
         CleanupCard()
+        CompatibilityCard(mainViewModel = mainViewModel)
         AboutCard()
     }
 }

@@ -63,6 +63,14 @@ class MainViewModel : ViewModel() {
             saveDisableBackToPrefs(value)
         }
 
+    private var _legacyViewport by mutableStateOf(loadLegacyViewportEnabled())
+    var legacyViewport: Boolean
+        get() = _legacyViewport
+        set(value) {
+            _legacyViewport = value
+            saveLegacyViewportToPrefs(value)
+        }
+
     private fun loadSavedUrl(): String {
         val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
         return prefs.getString(PreferenceKeys.KEY_URL, "") ?: ""
@@ -76,6 +84,16 @@ class MainViewModel : ViewModel() {
     private fun loadKeepScreenOnEnabled(): Boolean {
         val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
         return prefs.getBoolean(PreferenceKeys.KEY_KEEP_SCREEN_ON, false)
+    }
+
+    private fun loadDisableBackEnabled(): Boolean {
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(PreferenceKeys.KEY_DISABLE_BACK, false)
+    }
+
+    private fun loadLegacyViewportEnabled(): Boolean {
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        return prefs.getBoolean(PreferenceKeys.KEY_LEGACY_VIEWPORT, false)
     }
 
     private fun loadSavedParameters(): Map<String, String> {
@@ -105,20 +123,20 @@ class MainViewModel : ViewModel() {
         prefs.edit { putBoolean(PreferenceKeys.KEY_KEEP_SCREEN_ON, enabled) }
     }
 
+    private fun saveDisableBackToPrefs(enabled: Boolean) {
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(PreferenceKeys.KEY_DISABLE_BACK, enabled) }
+    }
+
+    private fun saveLegacyViewportToPrefs(enabled: Boolean) {
+        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(PreferenceKeys.KEY_LEGACY_VIEWPORT, enabled) }
+    }
+
     private fun saveParametersToPrefs(parameters: Map<String, String>) {
         val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
         val json = Gson().toJson(parameters)
         prefs.edit { putString(PreferenceKeys.KEY_PARAMETERS, json) }
-    }
-
-    private fun loadDisableBackEnabled(): Boolean {
-        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
-        return prefs.getBoolean(PreferenceKeys.KEY_DISABLE_BACK, false)
-    }
-
-    private fun saveDisableBackToPrefs(enabled: Boolean) {
-        val prefs = App.context.getSharedPreferences(PreferenceKeys.PREFS, Context.MODE_PRIVATE)
-        prefs.edit { putBoolean(PreferenceKeys.KEY_DISABLE_BACK, enabled) }
     }
 
     private fun normalizeUrl(input: String): String {
