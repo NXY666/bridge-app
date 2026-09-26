@@ -1,7 +1,12 @@
 package org.nxy.bridge.ui.admin
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -80,6 +85,21 @@ fun UpdaterCard() {
     val context = LocalContext.current
     val viewModel: UpdaterViewModel = viewModel()
     val updaterDiscovery: UpdaterDiscoveryViewModel = viewModel()
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        updaterDiscovery.startDiscovery()
+    }
+    val startDiscovery = {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN ||
+            context.checkSelfPermission(Manifest.permission.ACCESS_LOCAL_NETWORK) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            updaterDiscovery.startDiscovery()
+        } else {
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
+    }
 
     // 发现更新服务后自动检查更新
     val discoveredService = updaterDiscovery.discoveredServices.firstOrNull()
@@ -92,7 +112,7 @@ fun UpdaterCard() {
     // 启动时自动扫描更新服务
     LaunchedEffect(Unit) {
         if (!updaterDiscovery.isSearching && discoveredService == null) {
-            updaterDiscovery.startDiscovery()
+            startDiscovery()
         }
     }
 
@@ -197,7 +217,7 @@ fun UpdaterCard() {
                         }
                     } else {
                         IconButton(
-                            onClick = { updaterDiscovery.startDiscovery() },
+                            onClick = { startDiscovery() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(

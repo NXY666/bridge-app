@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "org.nxy.bridge"
     compileSdk = 37
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "org.nxy.bridge"

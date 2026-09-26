@@ -1,5 +1,10 @@
 package org.nxy.bridge.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -58,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,7 +85,23 @@ fun SettingsDialog(
 ) {
     if (!visible) return
 
+    val context = LocalContext.current
     val bridgeDiscoveryViewModel: BridgeDiscoveryViewModel = viewModel()
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        bridgeDiscoveryViewModel.startDiscovery()
+    }
+    val startDiscovery = {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN ||
+            context.checkSelfPermission(Manifest.permission.ACCESS_LOCAL_NETWORK) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            bridgeDiscoveryViewModel.startDiscovery()
+        } else {
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
+    }
 
     var urlInput by rememberSaveable { mutableStateOf(mainViewModel.url) }
     var landscapeInput by rememberSaveable { mutableStateOf(mainViewModel.landscape) }
@@ -147,7 +169,7 @@ fun SettingsDialog(
                         .clickable(
                             enabled = !bridgeDiscoveryViewModel.isSearching,
                             onClick = {
-                                bridgeDiscoveryViewModel.startDiscovery()
+                                startDiscovery()
                             })
                         .padding(12.dp)
                         .clip(MaterialTheme.shapes.small)
