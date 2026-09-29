@@ -396,7 +396,8 @@ class ScannerActivity : ComponentActivity() {
                         size = Size(side.toPx(), side.toPx())
                     )
                 } else {
-                    val topClearance = maxOf(statusBarHeight + 80.dp, 128.dp).coerceAtMost(maxHeight)
+                    val topClearance =
+                        maxOf(statusBarHeight + 80.dp, 128.dp).coerceAtMost(maxHeight)
                     val bottomClearance = (maxHeight - 128.dp).coerceAtLeast(topClearance)
                     val centerY = topClearance + (bottomClearance - topClearance) * 0.382f
                     val side = minOf(
