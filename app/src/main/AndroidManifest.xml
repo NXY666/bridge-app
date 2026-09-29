@@ -42,6 +42,10 @@
             android:exported="false"
             android:showOnLockScreen="true"
             android:theme="@style/Theme.Bridge" />
+        <activity
+            android:name=".ui.activity.ScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Bridge" />
 
         <receiver
             android:name=".util.ApkInstallResultReceiver"

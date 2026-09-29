@@ -2,7 +2,6 @@ package org.nxy.bridge.ui.model
 
 import android.content.Context
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
@@ -15,21 +14,20 @@ import org.nxy.bridge.App
 
 class MainViewModel : ViewModel() {
 
-    // 管理页解锁时间戳，0 表示未解锁
-    var adminUnlockTime by mutableLongStateOf(0L)
-
-    // 5分钟内是否已解锁
-    val isAdminUnlocked: Boolean
-        get() = System.currentTimeMillis() - adminUnlockTime < 5 * 60 * 1000L
+    // 管理页是否已解锁
+    var isAdminUnlocked by mutableStateOf(false)
 
     private var _url by mutableStateOf(loadSavedUrl())
     var url: String
         get() = _url
         set(value) {
-            val value = normalizeUrl(value)
-            _url = value
-            saveUrlToPrefs(value)
+            updateUrl(normalizeUrl(value))
         }
+
+    private fun updateUrl(value: String) {
+        _url = value
+        saveUrlToPrefs(value)
+    }
 
     private var _landscape by mutableStateOf(loadLandscapeEnabled())
     var landscape: Boolean
@@ -179,6 +177,17 @@ class MainViewModel : ViewModel() {
         } catch (_: Exception) {
             baseUrl
         }
+    }
+
+    /**
+     * 一次性应用扫码解析结果：参数整体覆盖，可选开关缺省时沿用旧值。
+     */
+    fun applyScanResult(result: ScanResultParser.ParsedScan) {
+        updateUrl(result.url)
+        parameters = result.parameters
+        result.landscape?.let { landscape = it }
+        result.keepScreenOn?.let { keepScreenOn = it }
+        result.disableBack?.let { disableBack = it }
     }
 
 }

@@ -2,16 +2,19 @@ package org.nxy.bridge.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,12 +24,13 @@ import androidx.compose.ui.unit.dp
 import org.nxy.bridge.ui.model.MainViewModel
 
 /**
- * 服务卡片：展示当前 URL 并提供配置入口。
+ * 服务卡片：展示当前 URL 并提供配置与扫码入口。
  */
 @Composable
 internal fun ServiceCard(
     mainViewModel: MainViewModel,
-    onShowSettingsDialog: () -> Unit
+    onShowSettingsDialog: () -> Unit,
+    onScan: () -> Unit
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -47,16 +51,30 @@ internal fun ServiceCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onShowSettingsDialog
-            ) {
-                Icon(
-                    Icons.Rounded.Settings,
-                    contentDescription = null,
-                    Modifier.size(18.dp)
-                )
-                Text(text = "配置", modifier = Modifier.padding(start = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = onShowSettingsDialog
+                ) {
+                    Icon(
+                        Icons.Rounded.Settings,
+                        contentDescription = null,
+                        Modifier.size(18.dp)
+                    )
+                    Text(text = "配置", modifier = Modifier.padding(start = 8.dp))
+                }
+
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = onScan
+                ) {
+                    Icon(
+                        Icons.Rounded.QrCodeScanner,
+                        contentDescription = null,
+                        Modifier.size(18.dp)
+                    )
+                    Text(text = "扫码", modifier = Modifier.padding(start = 8.dp))
+                }
             }
         }
     }

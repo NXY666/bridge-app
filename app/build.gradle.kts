@@ -12,6 +12,7 @@ android {
         applicationId = "org.nxy.bridge"
         minSdk = 26
         targetSdk = 37
+        ndk { abiFilters += "arm64-v8a" }
         versionCode = 1
         versionName = "0.0.0"
 
@@ -62,6 +63,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
@@ -74,6 +76,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp)
     implementation(libs.gson)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.zxing.cpp)
     implementation(libs.geckoview.arm64.v8a)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

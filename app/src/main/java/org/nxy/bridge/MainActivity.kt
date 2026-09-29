@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
@@ -24,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import org.nxy.bridge.ui.admin.AdminTab
 import org.nxy.bridge.ui.home.HomeTab
 import org.nxy.bridge.ui.model.MainViewModel
@@ -33,6 +33,10 @@ import org.nxy.bridge.ui.settings.SettingsDialog
 import org.nxy.bridge.ui.theme.BridgeTheme
 
 class MainActivity : ComponentActivity() {
+
+    // 主页 ViewModel
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,7 +47,9 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
-                    UrlEntryScreen()
+                    MainScreen(
+                        mainViewModel = mainViewModel
+                    )
                 }
             }
         }
@@ -55,9 +61,7 @@ class MainActivity : ComponentActivity() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UrlEntryScreen() {
-    val mainViewModel: MainViewModel = viewModel()
-
+fun MainScreen(mainViewModel: MainViewModel) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showPasswordDialog by rememberSaveable { mutableStateOf(false) }
@@ -105,7 +109,7 @@ fun UrlEntryScreen() {
         visible = showPasswordDialog,
         onDismiss = { showPasswordDialog = false },
         onSuccess = {
-            mainViewModel.adminUnlockTime = System.currentTimeMillis()
+            mainViewModel.isAdminUnlocked = true
             showPasswordDialog = false
         }
     )
